@@ -27,8 +27,208 @@ const C = {
   coatLight: "#4E7370"
 };
 
+const CATCHES = [
+  {
+    id: "bass",
+    name: "LARGEMOUTH BASS",
+    response: "DIRECT ANSWER",
+    category: "TARGET CATCH",
+    relevance: 5,
+    uncertainty: 2,
+    candidate: "Start with the British Museum, the National Gallery and the South Bank. Add one neighbourhood, such as Greenwich or Notting Hill, based on your interests.",
+    summary: "Closely addresses the question, but still requires verification.",
+    missing: ["SOURCE CHECK", "CONTEXT OUTSIDE THE PROMPT"]
+  },
+  {
+    id: "trout",
+    name: "RAINBOW TROUT",
+    response: "USEFUL ANSWER",
+    category: "STRONG CATCH",
+    relevance: 4,
+    uncertainty: 2,
+    candidate: "For a first visit, combine one major museum, one historic area and one riverside walk. The British Museum, Westminster and the South Bank make a balanced starting point.",
+    summary: "Useful and well formed, although one interpretation dominates.",
+    missing: ["ALTERNATIVE VIEW", "RECENT EVIDENCE"]
+  },
+  {
+    id: "pike",
+    name: "NORTHERN PIKE",
+    response: "CONFIDENT ANSWER",
+    category: "SHARP CATCH",
+    relevance: 4,
+    uncertainty: 4,
+    candidate: "The Tower of London is the single essential attraction and should be the centre of every London itinerary.",
+    summary: "Sounds decisive, but confidence is not proof of accuracy.",
+    missing: ["SUPPORTING SOURCES", "LIMITS OF THE CLAIM"]
+  },
+  {
+    id: "perch",
+    name: "YELLOW PERCH",
+    response: "PARTIAL ANSWER",
+    category: "SMALL CATCH",
+    relevance: 3,
+    uncertainty: 3,
+    candidate: "You could visit the British Museum, the Tower of London and Buckingham Palace.",
+    summary: "Contains something useful, but only covers part of the request.",
+    missing: ["FULL CONTEXT", "UNANSWERED PARTS"]
+  },
+  {
+    id: "carp",
+    name: "COMMON CARP",
+    response: "OVERLOADED ANSWER",
+    category: "HEAVY CATCH",
+    relevance: 3,
+    uncertainty: 3,
+    candidate: "London has hundreds of possibilities: museums, markets, parks, palaces, galleries, theatres, viewpoints and neighbourhood walks. Try to see as many as possible.",
+    summary: "Provides a lot of material, but quantity obscures the central point.",
+    missing: ["PRIORITY", "A CLEAR CONCLUSION"]
+  },
+  {
+    id: "weeds",
+    name: "RIVER WEED",
+    response: "IRRELEVANT RESPONSE",
+    category: "NON-TARGET CATCH",
+    relevance: 1,
+    uncertainty: 4,
+    candidate: "Consider taking a day trip to Stonehenge and Bath, followed by an evening in Brighton.",
+    summary: "A response was produced, but it does not answer the intended question.",
+    missing: ["USER INTENT", "RELEVANT INFORMATION"]
+  },
+  {
+    id: "rubbish",
+    name: "RIVER RUBBISH",
+    response: "MISLEADING RESPONSE",
+    category: "CONTAMINATED CATCH",
+    relevance: 2,
+    uncertainty: 5,
+    candidate: "The British Museum requires an expensive advance ticket, and the Changing of the Guard takes place every afternoon.",
+    summary: "Looks like a result, but may carry incorrect or distorted information.",
+    missing: ["RELIABLE EVIDENCE", "FACT CHECKING"]
+  },
+  {
+    id: "boot",
+    name: "OLD BOOT",
+    response: "OUTDATED RESPONSE",
+    category: "RESIDUAL CATCH",
+    relevance: 2,
+    uncertainty: 4,
+    candidate: "Visit the Museum of London at its former Barbican site, then use a paper travelcard for every Underground journey.",
+    summary: "Related to the topic, but shaped by information that may no longer apply.",
+    missing: ["CURRENT DATA", "DATE AND ORIGIN"]
+  }
+];
+
+const EXAMPLE_QUESTION = "What attractions should I visit in London?";
+
+const TACKLE_TYPES = [
+  { name: "DIRECT", effect: "Asks for the answer without extra framing.", caution: "Fast, but may stay general.", atlas: 0 },
+  { name: "CONTEXT-RICH", effect: "Adds useful background before the question.", caution: "More specific, but context can distract.", atlas: 1 },
+  { name: "EXAMPLE-GUIDED", effect: "Shows the kind of answer you want.", caution: "Clearer shape, but may copy the example.", atlas: 2 },
+  { name: "CLARIFYING", effect: "Checks missing details before answering.", caution: "Careful, but takes another step.", atlas: 3 },
+  { name: "COMPARATIVE", effect: "Compares several possible answers.", caution: "Balanced, but less decisive.", atlas: 4 },
+  { name: "EVIDENCE-LED", effect: "Asks for support and checks.", caution: "Stronger claims, but slower and longer.", atlas: 5 }
+];
+
+const TACKLE_COLOURS = [
+  { name: "NEUTRAL", effect: "Uses calm, balanced language.", caution: "Clear, but may feel less personal." },
+  { name: "FRIENDLY", effect: "Uses warm and accessible language.", caution: "Easy to read, but less formal." },
+  { name: "FORMAL", effect: "Uses structured and professional language.", caution: "Precise, but may feel distant." },
+  { name: "CRITICAL", effect: "Questions assumptions and weak claims.", caution: "Useful for checking, but can feel severe." }
+];
+
+const TACKLE_WEIGHTS = [
+  { name: "LIGHT", effect: "Requests a short answer.", caution: "Quick, but may omit context." },
+  { name: "MEDIUM", effect: "Requests useful detail without overload.", caution: "Balanced, but still selective." },
+  { name: "HEAVY", effect: "Requests a detailed answer.", caution: "Thorough, but may obscure the main point." }
+];
+
+const RETRIEVES = [
+  { name: "STRAIGHT", effect: "Answers the question immediately.", caution: "Direct, but does not self-check." },
+  { name: "STOP-AND-GO", effect: "Answers in short organised stages.", caution: "Readable, but may break the flow." },
+  { name: "REVIEW", effect: "Answers, then checks weak points.", caution: "More careful, but not guaranteed correct." },
+  { name: "STEP-BY-STEP", effect: "Builds the answer in a clear sequence.", caution: "Transparent structure, but can be long." }
+];
+
+const TACKLE_PROFILES = [
+  { id: "quick", name: "QUICK OVERVIEW", type: 0, colour: 0, weight: 0, retrieve: 0, why: "A short, neutral list for first ideas." },
+  { id: "personal", name: "PERSONALISED GUIDE", type: 1, colour: 1, weight: 1, retrieve: 1, why: "Adds context and keeps the answer easy to explore." },
+  { id: "checked", name: "CHECKED ITINERARY", type: 5, colour: 0, weight: 2, retrieve: 2, why: "Requests detail and checks claims before planning." },
+  { id: "compare", name: "COMPARE OPTIONS", type: 4, colour: 0, weight: 1, retrieve: 1, why: "Compares different kinds of London experience." },
+  { id: "local", name: "LOCAL FEEL", type: 1, colour: 1, weight: 1, retrieve: 3, why: "Uses preferences to build a more personal route." },
+  { id: "careful", name: "CAREFUL START", type: 3, colour: 0, weight: 0, retrieve: 2, why: "Checks what matters before making suggestions." },
+  { id: "sample", name: "MATCH AN EXAMPLE", type: 2, colour: 2, weight: 1, retrieve: 3, why: "Uses a clear example to shape the answer." },
+  { id: "challenge", name: "QUESTION THE LIST", type: 4, colour: 3, weight: 2, retrieve: 2, why: "Looks for trade-offs instead of one perfect list." },
+  { id: "evidence", name: "VERIFY DETAILS", type: 5, colour: 2, weight: 2, retrieve: 2, why: "Prioritises current opening and booking information." }
+];
+
+const RESULT_BUTTONS = {
+  keep: { x: 1038, y: 690, w: 374, h: 168 },
+  release: { x: 1398, y: 690, w: 386, h: 168 },
+  recast: { x: 154, y: 870, w: 505, h: 118 },
+  retackle: { x: 684, y: 870, w: 527, h: 118 },
+  newTarget: { x: 1234, y: 870, w: 530, h: 118 }
+};
+
+const UI_ART = { x: 124, y: 70, w: 1672, h: 941 };
+
+const QUESTION_BOUNDS = {
+  input: { x: 792, y: 220, w: 932, h: 400 },
+  example: { x: 1580, y: 646, w: 150, h: 142 },
+  confirm: { x: 780, y: 816, w: 950, h: 126 }
+};
+
+const TACKLE_BOUNDS = {
+  cards: [
+    { x: 318, y: 292, w: 416, h: 522 },
+    { x: 748, y: 292, w: 416, h: 522 },
+    { x: 1180, y: 292, w: 416, h: 522 }
+  ],
+  refresh: { x: 1490, y: 164, w: 116, h: 116 },
+  confirm: { x: 680, y: 846, w: 570, h: 104 },
+  back: { x: 318, y: 832, w: 112, h: 112 }
+};
+
+const INTERACTION_ASSETS = {
+  lures: [
+    { x: 20, y: 36, w: 260, h: 245 },
+    { x: 302, y: 36, w: 278, h: 245 },
+    { x: 630, y: 36, w: 242, h: 245 },
+    { x: 882, y: 26, w: 278, h: 260 },
+    { x: 1168, y: 34, w: 260, h: 250 },
+    { x: 1422, y: 28, w: 238, h: 255 }
+  ],
+  shadows: [
+    { x: 34, y: 326, w: 302, h: 196 },
+    { x: 362, y: 330, w: 316, h: 188 },
+    { x: 700, y: 332, w: 322, h: 180 },
+    { x: 1074, y: 306, w: 310, h: 220 },
+    { x: 1406, y: 334, w: 250, h: 174 }
+  ],
+  colours: [
+    { x: 72, y: 568, w: 194, h: 72 },
+    { x: 310, y: 568, w: 194, h: 72 },
+    { x: 546, y: 568, w: 194, h: 72 },
+    { x: 770, y: 568, w: 190, h: 72 }
+  ],
+  weights: [
+    { x: 1010, y: 552, w: 92, h: 112 },
+    { x: 1170, y: 552, w: 150, h: 112 },
+    { x: 1378, y: 552, w: 226, h: 112 }
+  ],
+  retrieves: [
+    { x: 54, y: 720, w: 246, h: 126 },
+    { x: 304, y: 720, w: 246, h: 126 },
+    { x: 548, y: 706, w: 250, h: 150 },
+    { x: 786, y: 720, w: 198, h: 126 }
+  ],
+  refresh: { x: 990, y: 700, w: 142, h: 166 },
+  tooltip: { x: 1144, y: 730, w: 300, h: 112 }
+};
+
+const BACKPACK_BUTTON = { x: 1798, y: 996, w: 88, h: 70 };
+
 const game = {
-  state: "ready",
+  state: "question",
   stateStarted: 0,
   charge: 0,
   castPower: 0,
@@ -46,18 +246,74 @@ const game = {
   observation: { x: 1040, y: 650 },
   shake: 0,
   flash: 0,
-  runNumber: 1
+  runNumber: 1,
+  currentCatch: null,
+  inventory: [],
+  archiveSelected: -1,
+  archiveReturnState: "ready",
+  question: "",
+  questionFocused: true,
+  recommendations: [],
+  recommendationDeck: [],
+  selectedRecommendation: -1,
+  selectedTackleId: null,
+  judgement: null,
+  currentKept: false,
+  hoverTip: null,
+  targetShadowIndex: 0,
+  lastQuestionEditAt: 0,
+  targetLockAt: 0,
+  tackleSelectAt: 0,
+  saveStampAt: 0
 };
 
 let lastFrameTime = 0;
 let riverBackground;
 let anglerSprites;
 let cloudSprites;
-let plantSprites;
+let plantAFrames;
+let plantBFrames;
+let fishShadowFrames;
+let rippleFrames;
+let splashFrames;
+let backpackClosed;
+let backpackOpen;
+let catchImpact;
+let recommendationAtlas;
+let targetScreenBase;
+let tackleScreenBase;
+let resultScreenBase;
+let interactionAssetSheet;
+let archiveCatchSheet;
+let targetLockSheet;
+let tackleSelectSheet;
+let fishingEffectsSheet;
+let catchRevealSheet;
+let saveComicSheet;
+let catchResultsNativeSheet;
+let archiveCatchesNativeSheet;
+let targetShadowsNativeSheet;
+let backpackOpenNativeSource;
+let backpackOpenNative;
+let uiFont;
+const catchImages = [];
+const archiveCatchSprites = [];
+const catchResultSprites = [];
+const foliageFrames = [];
+const waterFrames = [];
+const castComicFrames = [];
+const biteComicFrames = [];
+const tensionComicFrames = [];
+const catchRevealFrames = [];
+const saveStampFrames = [];
+const comicOrnaments = [];
+const tackleSelectFrames = [];
+const targetShadowFrames = [];
+const targetLockFrames = [];
 
 const ANGLER = {
-  x: 105,
-  y: 580,
+  x: 300,
+  y: 525,
   width: 240,
   height: 347,
   frameWidth: 180,
@@ -65,33 +321,109 @@ const ANGLER = {
 };
 
 const ANGLER_POSES = {
-  ready: { frame: 0, hand: { x: 278, y: 780 } },
-  charging: { frame: 2, hand: { x: 292, y: 720 } },
-  flying: { frame: 3, hand: { x: 316, y: 718 } },
-  waiting: { frame: 0, hand: { x: 278, y: 780 } },
-  bite: { frame: 4, hand: { x: 292, y: 758 } },
-  hooked: { frame: 5, hand: { x: 300, y: 756 } },
-  caught: { frame: 0, hand: { x: 278, y: 780 } },
-  failed: { frame: 1, hand: { x: 278, y: 780 } }
+  ready: { frame: 0, hand: { x: 456, y: 736 } },
+  charging: { frame: 2, hand: { x: 458, y: 716 } },
+  flying: { frame: 3, hand: { x: 460, y: 704 } },
+  waiting: { frame: 0, hand: { x: 456, y: 736 } },
+  bite: { frame: 4, hand: { x: 458, y: 724 } },
+  hooked: { frame: 5, hand: { x: 456, y: 718 } },
+  impact: { frame: 0, hand: { x: 456, y: 736 } },
+  result: { frame: 0, hand: { x: 456, y: 736 } },
+  archive: { frame: 0, hand: { x: 456, y: 736 } },
+  caught: { frame: 0, hand: { x: 456, y: 736 } },
+  failed: { frame: 1, hand: { x: 456, y: 736 } }
 };
 
 function preload() {
-  riverBackground = loadImage("public/images/river-background.png");
-  anglerSprites = loadImage("public/images/angler-sprites.png");
-  cloudSprites = loadImage("public/images/cloud-sprites.png");
-  plantSprites = loadImage("public/images/plant-sprites.png");
+  uiFont = loadFont("public/fonts/RetroSans.ttf");
+  riverBackground = loadImage("public/images/river-background-native.png");
+  anglerSprites = loadImage("public/images/angler-sprites-clean.png");
+  cloudSprites = loadImage("public/images/cloud-sprites-clean.png");
+  plantAFrames = loadImage("public/images/plant-a-frames.png");
+  plantBFrames = loadImage("public/images/plant-b-frames.png");
+  fishShadowFrames = loadImage("public/images/fish-shadow-frames.png");
+  rippleFrames = loadImage("public/images/ripple-frames.png");
+  splashFrames = loadImage("public/images/splash-frames.png");
+  backpackClosed = loadImage("public/images/backpack-closed.png");
+  backpackOpen = loadImage("public/images/backpack-open.png");
+  catchImpact = loadImage("public/images/catch-impact.png");
+  recommendationAtlas = loadImage("public/images/interaction-ui-atlas.png");
+  targetScreenBase = loadImage("public/images/target-screen-base.png");
+  tackleScreenBase = loadImage("public/images/tackle-screen-base.png");
+  resultScreenBase = loadImage("public/images/result-screen-base.png");
+  interactionAssetSheet = loadImage("public/images/interaction-assets.png");
+  archiveCatchSheet = loadImage("public/images/comic/archive-catches-sheet.png");
+  targetLockSheet = loadImage("public/images/comic/target-lock-sheet.png");
+  tackleSelectSheet = loadImage("public/images/comic/tackle-select-sheet.png");
+  fishingEffectsSheet = loadImage("public/images/comic/fishing-effects-sheet.png");
+  catchRevealSheet = loadImage("public/images/comic/catch-reveal-sheet.png");
+  saveComicSheet = loadImage("public/images/comic/save-comic-sheet.png");
+  catchResultsNativeSheet = loadImage("public/images/catch-results-native-source.png");
+  archiveCatchesNativeSheet = loadImage("public/images/archive-catches-native-source.png");
+  targetShadowsNativeSheet = loadImage("public/images/target-shadows-native-source.png");
+  backpackOpenNativeSource = loadImage("public/images/backpack-open-native-source.png");
+  for (const catchDefinition of CATCHES) {
+    catchImages.push(loadImage(`public/images/catch-${catchDefinition.id}-transparent.png`));
+  }
+  for (let i = 0; i < 4; i += 1) {
+    foliageFrames.push(loadImage(`public/images/foliage-frame-${i}.png`));
+  }
+  for (let i = 0; i < 6; i += 1) {
+    waterFrames.push(loadImage(`public/images/water-frame-${i}.png`));
+  }
 }
 
 function setup() {
   const canvas = createCanvas(W, H);
   canvas.parent("canvasWrap");
+  canvas.elt.tabIndex = 0;
+  canvas.elt.addEventListener("pointerdown", () => canvas.elt.focus());
+  canvas.elt.focus();
   pixelDensity(1);
   frameRate(60);
   noSmooth();
   strokeCap(SQUARE);
   strokeJoin(MITER);
-  textFont("monospace");
-  resetCast();
+  textFont(uiFont);
+  prepareComicAssets();
+  game.stateStarted = millis();
+  refreshRecommendations();
+  applyPreviewState();
+  updateAccessibleStatus();
+}
+
+function applyPreviewState() {
+  const parameters = new URLSearchParams(window.location.search);
+  const preview = parameters.get("preview");
+  if (!preview) return;
+  game.question = EXAMPLE_QUESTION;
+  game.selectedTackleId = TACKLE_PROFILES[0].id;
+  if (preview === "result") {
+    const requestedId = parameters.get("catch") || "trout";
+    game.currentCatch = CATCHES.find((item) => item.id === requestedId) || CATCHES[0];
+    game.result = ["weeds", "rubbish", "boot"].includes(game.currentCatch.id) ? "weeds" : "fish";
+    game.state = "result";
+    game.stateStarted = millis();
+  } else if (preview === "archive") {
+    game.inventory = CATCHES.map((item, index) => ({
+      id: item.id,
+      tackleId: TACKLE_PROFILES[index % TACKLE_PROFILES.length].id,
+      question: EXAMPLE_QUESTION,
+      cast: index + 1,
+      savedAt: "12:00"
+    }));
+    game.archiveSelected = 0;
+    game.archiveReturnState = "ready";
+    game.state = "archive";
+    game.stateStarted = millis();
+  } else if (preview === "tackle") {
+    game.recommendations = [0, 1, 2];
+    game.selectedRecommendation = 0;
+    game.selectedTackleId = TACKLE_PROFILES[0].id;
+    game.tackleSelectAt = millis();
+    game.state = "tackle";
+    game.stateStarted = millis();
+  }
 }
 
 function draw() {
@@ -107,7 +439,7 @@ function draw() {
     translate(round(random(-game.shake, game.shake)), round(random(-game.shake, game.shake)));
   }
   drawRiverWorld(now);
-  drawFishingAction(now);
+  if (!['question', 'tackle'].includes(game.state)) drawFishingAction(now);
   pop();
 
   drawInterface(now);
@@ -117,6 +449,17 @@ function draw() {
 
 function updateGame(dt) {
   const elapsed = millis() - game.stateStarted;
+
+  if (game.state === "question" && game.targetLockAt > 0 && millis() - game.targetLockAt >= 1180) {
+    game.targetLockAt = 0;
+    game.recommendationDeck = [];
+    refreshRecommendations();
+    setState("tackle");
+  }
+
+  if (game.state === "impact" && elapsed >= 1080) {
+    setState("result");
+  }
 
   if (game.state === "charging") {
     game.charge = (sin(millis() * 0.005 - HALF_PI) + 1) * 0.5;
@@ -134,7 +477,7 @@ function updateGame(dt) {
   if (game.state === "waiting") {
     if (mouseIsPressed) {
       game.retrieve = min(1, game.retrieve + dt * 0.075);
-      game.lure.x = lerp(game.castTarget.x, 805, game.retrieve);
+      game.lure.x = lerp(game.castTarget.x, 930, game.retrieve);
       game.lure.y = lerp(game.castTarget.y, 690, game.retrieve);
       if (frameCount % 17 === 0) addRipple(game.lure.x, game.lure.y, C.mist, 42);
     }
@@ -167,13 +510,13 @@ function updateGame(dt) {
     const direction = sin(millis() * 0.0021) * 250;
     const fishY = game.castTarget.y + sin(millis() * 0.007) * 28;
     const fishX = max(game.castTarget.x + direction, getWaterLeft(fishY) + 110);
-    game.lure.x = lerp(fishX, 860, game.fishProgress);
+    game.lure.x = lerp(fishX, 950, game.fishProgress);
     game.lure.y = lerp(fishY, 740, game.fishProgress);
     if (frameCount % 11 === 0) addSplash(game.lure.x, game.lure.y, 5);
 
     if (game.tension >= 0.985 && game.dangerTime > 1.1) finishRun("snapped");
     else if (game.tension <= 0.015 && game.dangerTime > 1.4) finishRun("escaped");
-    else if (game.fishProgress >= 1) finishRun(random() < 0.78 ? "fish" : "weeds");
+    else if (game.fishProgress >= 1) landRandomCatch();
   }
 
   updateEffects(dt);
@@ -184,7 +527,7 @@ function updateObservation(dt) {
   let targetY = 650;
 
   if (game.state === "ready" || game.state === "charging") {
-    targetX = constrain(mouseX, 600, 1620);
+    targetX = constrain(mouseX, 850, 1650);
     targetY = constrain(mouseY, 520, 800);
   } else if (["flying", "waiting", "bite", "hooked"].includes(game.state)) {
     targetX = game.lure.x;
@@ -203,42 +546,30 @@ function updateObservation(dt) {
 
 function drawRiverWorld(now) {
   image(riverBackground, 0, 0, W, H);
+  drawFoliageAnimation(now);
   drawAtmosphereMotion(now);
   beginWaterClip();
   drawWaterAnimation(now);
-  drawShoreMotion(now);
   drawObservationZone(now);
   endWaterClip();
-  drawAmbientParticles(now);
   drawPlantLayer(now);
-  drawAngler(now);
+}
+
+function drawFoliageAnimation(now) {
+  const frame = floor(now / 420) % foliageFrames.length;
+  image(foliageFrames[frame], 0, 0);
 }
 
 function drawAtmosphereMotion(now) {
-  const x1 = 610 + ((now * 0.008) % 460);
-  const x3 = 620 + ((now * 0.0035 + 300) % 500);
-  drawCloudSprite(x1, 126, 0, 270, 135);
-  drawCloudSprite(x3, 100, 2, 158, 79);
+  const x1 = 570 + ((now * 0.009) % 520);
+  const x3 = 920 + ((now * 0.004 + 180) % 430);
+  drawCloudSprite(x1, 126, 0);
+  drawCloudSprite(x3, 102, 2);
 }
 
 function drawWaterAnimation(now) {
-  const t = now * 0.0011;
-  const movingColours = [C.riverGlint, C.mist, C.riverLight];
-  noStroke();
-  for (let row = 0; row < 8; row += 1) {
-    const depth = row / 7;
-    const y = 496 + row * 61;
-    const spacing = 154 + round(depth * 72);
-    fill(movingColours[row % movingColours.length]);
-    for (let x = -120; x < W + 140; x += spacing) {
-      const drift = (t * (14 + row * 0.7) + row * 31) % spacing;
-      const seed = hash01(x * 0.13 + row * 61);
-      if (seed > 0.56) {
-        const markWidth = 8 + round(seed * (14 + depth * 30));
-        rect(round(x + drift), y, markWidth, row % 4 === 0 ? 3 : 2);
-      }
-    }
-  }
+  const frame = floor(now / 160) % waterFrames.length;
+  image(waterFrames[frame], 0, 0);
 }
 
 function getWaterLeft(y) {
@@ -271,19 +602,18 @@ function endWaterClip() {
   drawingContext.restore();
 }
 
-function drawCloudSprite(x, y, frame, drawWidth, drawHeight) {
-  image(cloudSprites, round(x), round(y), drawWidth, drawHeight, frame * 320, 0, 320, 160);
+function drawCloudSprite(x, y, frame) {
+  image(cloudSprites, round(x), round(y), 400, 180, frame * 400, 0, 400, 180);
 }
 
 function drawPlantLayer(now) {
-  const swayA = round(sin(now * 0.0013) * 2);
-  const swayB = round(sin(now * 0.0011 + 1.7) * 2);
-  drawPlantSprite(366 + swayA, 730, 0, 78, 107);
-  drawPlantSprite(652 + swayB, 762, 3, 82, 113);
+  drawPlantAnimation(plantAFrames, 350, 760, now, 0);
+  drawPlantAnimation(plantBFrames, 650, 790, now, 210);
 }
 
-function drawPlantSprite(x, y, frame, drawWidth, drawHeight) {
-  image(plantSprites, round(x), round(y), drawWidth, drawHeight, frame * 160, 0, 160, 220);
+function drawPlantAnimation(sheet, x, y, now, offset) {
+  const frame = floor((now + offset) / 260) % 4;
+  image(sheet, x, y, 128, 180, frame * 128, 0, 128, 180);
 }
 
 function drawCanopyMotion(now) {
@@ -730,10 +1060,12 @@ function getAnglerFrame() {
 
 function drawFishingAction(now) {
   drawRodAndLine(now);
+  drawAngler(now);
   beginWaterClip();
   drawFishShadow(now);
   drawRipples();
   drawSplashes();
+  drawFishingComicEffects(now);
 
   if (["waiting", "bite", "hooked"].includes(game.state)) drawLure(game.lure.x, game.lure.y, 0.8);
   endWaterClip();
@@ -753,7 +1085,7 @@ function getRodTip(now) {
     bendX = 34 + game.tension * 54;
     bendY = 42 + game.tension * 52;
   }
-  return { x: 630 + bendX, y: 470 + bendY };
+  return { x: 825 + bendX, y: 470 + bendY };
 }
 
 function getRodBase() {
@@ -810,7 +1142,34 @@ function drawFlyingLure() {
   stroke(C.paper);
   strokeWeight(2);
   bezier(tip.x, tip.y, tip.x + 120, tip.y - 130, x - 80, y - 80, x, y);
+  if (castComicFrames.length > 0) {
+    const frame = min(7, floor(t * 8));
+    const effect = castComicFrames[frame];
+    push();
+    tint(255, 220);
+    image(effect, round(x - 190), round(y - 115), 380, 230);
+    noTint();
+    pop();
+  }
   drawLure(x, y, 1);
+}
+
+function drawFishingComicEffects(now) {
+  if (game.state === "bite" && biteComicFrames.length > 0) {
+    const elapsed = max(0, now - game.stateStarted);
+    const frame = floor(elapsed / 90) % biteComicFrames.length;
+    image(biteComicFrames[frame], round(game.lure.x - 170), round(game.lure.y - 120), 340, 220);
+  }
+  if (game.state === "hooked" && tensionComicFrames.length > 0) {
+    const elapsed = max(0, now - game.stateStarted);
+    const frame = floor(elapsed / 105) % tensionComicFrames.length;
+    const effect = tensionComicFrames[frame];
+    push();
+    tint(255, 205);
+    image(effect, round(game.lure.x - 150), round(game.lure.y - 102), 300, 204);
+    noTint();
+    pop();
+  }
 }
 
 function drawLure(x, y, scaleValue) {
@@ -839,47 +1198,572 @@ function drawLure(x, y, scaleValue) {
 function drawFishShadow(now) {
   if (!["waiting", "bite", "hooked"].includes(game.state)) return;
 
-  const alphaValue = game.state === "hooked" ? 185 : game.state === "bite" ? 132 : 52;
   const y = game.lure.y + 54 + cos(now * 0.002) * 9;
   const rawX = game.state === "hooked" ? game.lure.x : game.lure.x + sin(now * 0.0018) * 92;
   const x = constrain(rawX, getWaterLeft(y) + 82, W - 82);
-
+  const shadow = INTERACTION_ASSETS.shadows[game.runNumber % INTERACTION_ASSETS.shadows.length];
+  const alphaValue = game.state === "hooked" ? 255 : game.state === "bite" ? 205 : 125;
   push();
-  translate(round(x), round(y));
-  noStroke();
-  fill(16, 28, 38, alphaValue);
-  rect(-35, -12, 68, 24);
-  rect(-45, -8, 88, 16);
-  triangle(-38, 0, -68, -18, -64, 19);
-  triangle(4, -10, 22, -24, 28, -7);
-  fill(120, 170, 162, alphaValue * 0.36);
-  rect(12, -7, 16, 3);
+  tint(255, alphaValue);
+  image(interactionAssetSheet, round(x) - 145, round(y) - 78, 290, 156, shadow.x, shadow.y, shadow.w, shadow.h);
+  noTint();
   pop();
 }
 
 function drawRipples() {
-  noFill();
   for (const ripple of game.ripples) {
-    stroke(ripple.colour);
-    strokeWeight(max(2, 4 * (1 - ripple.life)));
-    const rw = ripple.size * ripple.life;
-    const rh = rw * 0.23;
-    arc(ripple.x, ripple.y, rw, rh, PI + 0.2, TWO_PI - 0.2);
-    arc(ripple.x, ripple.y, rw, rh, 0.2, PI - 0.2);
+    const frame = constrain(floor(ripple.life * 6), 0, 5);
+    image(rippleFrames, round(ripple.x) - 90, round(ripple.y) - 45, 180, 90, frame * 180, 0, 180, 90);
   }
 }
 
 function drawSplashes() {
-  noStroke();
-  for (const drop of game.splashes) {
-    fill(drop.colour);
-    const dw = max(2, round(drop.size * 0.38 / GRID) * GRID);
-    const dh = max(4, round(drop.size / GRID) * GRID);
-    rect(round(drop.x / GRID) * GRID, round(drop.y / GRID) * GRID, dw, dh);
+  for (const splash of game.splashes) {
+    const frame = constrain(floor(splash.life * 6), 0, 5);
+    image(splashFrames, round(splash.x) - 60, round(splash.y) - 92, 120, 120, frame * 120, 0, 120, 120);
   }
 }
 
+function drawFlowTopBar(sectionLabel) {
+  noStroke();
+  fill(C.ink);
+  rect(0, 0, W, 82);
+  fill(C.paper);
+  textStyle(BOLD);
+  textSize(27);
+  text("THE ANGLER", 34, 50);
+  fill(C.forestMid);
+  rect(260, 22, 2, 38);
+  fill(C.mist);
+  textStyle(NORMAL);
+  textSize(17);
+  text(sectionLabel, 292, 49);
+  textAlign(RIGHT, BASELINE);
+  text("BENEATH THE SURFACE?", W - 34, 49);
+  textAlign(LEFT, BASELINE);
+}
+
+function drawQuestionScreen(now) {
+  background(C.ink);
+  image(targetScreenBase, UI_ART.x, UI_ART.y, UI_ART.w, UI_ART.h);
+
+  fill(C.yellow);
+  textStyle(BOLD);
+  textSize(42);
+  text("WHAT ARE YOU FISHING FOR?", 808, 198);
+
+  drawTargetSignal(now);
+
+  const input = QUESTION_BOUNDS.input;
+  fill(C.paper);
+  textStyle(NORMAL);
+  textSize(34);
+  textWrap(WORD);
+  const visibleQuestion = game.question || "Type your question here...";
+  if (!game.question) fill(C.hillShadow);
+  text(visibleQuestion, input.x + 28, input.y + 58, input.w - 56, input.h - 84);
+  if (game.questionFocused && floor(now / 450) % 2 === 0) {
+    fill(C.yellow);
+    rect(input.x + 28, input.y + input.h - 42, 22, 3);
+  }
+
+  drawUiCenteredText("EXAMPLE", QUESTION_BOUNDS.example, 18, C.ink, 0);
+  const canConfirm = game.question.trim().length > 0;
+  drawUiCenteredText(game.targetLockAt ? "TARGET LOCKING" : "SET THIS TARGET", QUESTION_BOUNDS.confirm, 30, canConfirm ? C.yellow : C.hillShadow, 0);
+}
+
+function drawTargetSignal(now) {
+  if (game.question.length === 0) return;
+  // Keep every silhouette inside the target window. The long-bodied frames
+  // need more breathing room than the original equal-cell sheet crop allowed.
+  const destination = { x: 302, y: 296, w: 334, h: 226 };
+  const shadowFrame = targetShadowFrames[game.targetShadowIndex % max(1, targetShadowFrames.length)];
+  if (game.targetLockAt > 0) {
+    if (shadowFrame) {
+      push();
+      tint(255, 255);
+      drawImageContained(shadowFrame, destination);
+      noTint();
+      pop();
+    }
+    drawUiCenteredText("TARGET LOCKED", { x: 294, y: 522, w: 350, h: 48 }, 20, C.yellow, 4);
+    return;
+  }
+  if (shadowFrame) {
+    push();
+    tint(255, now - game.lastQuestionEditAt < 190 ? 255 : 235);
+    drawImageContained(shadowFrame, destination);
+    noTint();
+    pop();
+  }
+}
+
+function noteQuestionEdit() {
+  game.lastQuestionEditAt = millis();
+  if (targetShadowFrames.length > 0) {
+    game.targetShadowIndex = (game.targetShadowIndex + 1) % targetShadowFrames.length;
+  }
+}
+
+function drawImageContained(source, destination) {
+  const scale = min(destination.w / source.width, destination.h / source.height);
+  const widthValue = round(source.width * scale);
+  const heightValue = round(source.height * scale);
+  image(
+    source,
+    round(destination.x + (destination.w - widthValue) / 2),
+    round(destination.y + (destination.h - heightValue) / 2),
+    widthValue,
+    heightValue
+  );
+}
+
+function drawComicOrnament(index, x, y, w, h, alphaValue = 255) {
+  if (comicOrnaments.length === 0) return;
+  const ornament = comicOrnaments[index % comicOrnaments.length];
+  push();
+  tint(255, alphaValue);
+  image(ornament, x, y, w, h);
+  noTint();
+  pop();
+}
+
+function drawTackleScreen() {
+  background(C.ink);
+  image(tackleScreenBase, UI_ART.x, UI_ART.y, UI_ART.w, UI_ART.h);
+
+  fill(C.mist);
+  textStyle(NORMAL);
+  textSize(24);
+  textAlign(LEFT, CENTER);
+  text(game.question, 364, 210);
+  textAlign(LEFT, BASELINE);
+
+  for (let index = 0; index < TACKLE_BOUNDS.cards.length; index += 1) {
+    const profileIndex = game.recommendations[index];
+    if (profileIndex === undefined) continue;
+    drawTackleCard(TACKLE_PROFILES[profileIndex], TACKLE_BOUNDS.cards[index], index);
+  }
+
+  const hasSelection = game.selectedRecommendation >= 0;
+  drawUiCenteredText("TAKE THIS TACKLE", TACKLE_BOUNDS.confirm, 27, hasSelection ? C.yellow : C.hillShadow, 0);
+}
+
+function drawTackleCard(profile, bounds, cardIndex) {
+  const selected = game.selectedRecommendation === cardIndex;
+  drawUiCenteredText(
+    profile.name,
+    { x: bounds.x + 10, y: bounds.y + 8, w: bounds.w - 20, h: 60 },
+    25,
+    selected ? C.yellow : C.paper,
+    7
+  );
+
+  if (selected && tackleSelectFrames.length > 0) {
+    const elapsed = millis() - game.tackleSelectAt;
+    const animatedFrame = min(4, floor(max(0, elapsed) / 135));
+    const overlay = tackleSelectFrames[animatedFrame];
+    push();
+    drawingContext.save();
+    drawingContext.beginPath();
+    drawingContext.rect(bounds.x, bounds.y, bounds.w, bounds.h);
+    drawingContext.clip();
+    tint(255, elapsed < 760 ? 242 : 218);
+    image(overlay, bounds.x - 86, bounds.y - 90, bounds.w + 172, bounds.h + 180);
+    noTint();
+    drawingContext.restore();
+    pop();
+  }
+
+  const lureBounds = { x: bounds.x + 74, y: bounds.y + 66, w: 268, h: 190 };
+  drawAsset(INTERACTION_ASSETS.lures[profile.type], lureBounds);
+  drawUiCenteredText(TACKLE_TYPES[profile.type].name, { x: bounds.x, y: bounds.y + 254, w: bounds.w, h: 44 }, 19, C.yellow, 6);
+
+  const colourBounds = { x: bounds.x + 24, y: bounds.y + 326, w: 150, h: 58 };
+  const weightBounds = { x: bounds.x + 224, y: bounds.y + 318, w: 140, h: 68 };
+  const retrieveBounds = { x: bounds.x + 24, y: bounds.y + 392, w: 360, h: 70 };
+  drawAsset(INTERACTION_ASSETS.colours[profile.colour], colourBounds);
+  drawAssetContained(INTERACTION_ASSETS.weights[profile.weight], weightBounds);
+  drawAsset(INTERACTION_ASSETS.retrieves[profile.retrieve], retrieveBounds);
+
+  drawUiCenteredText(TACKLE_COLOURS[profile.colour].name, { x: bounds.x + 28, y: bounds.y + 360, w: 144, h: 38 }, 18, C.paper, 7);
+  drawUiCenteredText(TACKLE_WEIGHTS[profile.weight].name, { x: bounds.x + 224, y: bounds.y + 360, w: 140, h: 38 }, 18, C.paper, 7);
+  drawUiCenteredText(
+    RETRIEVES[profile.retrieve].name,
+    { x: bounds.x + 24, y: bounds.y + 466, w: 360, h: 28 },
+    17,
+    C.paper,
+    0
+  );
+
+}
+
+function drawUiCenteredText(label, bounds, size, colour, yOffset = 0) {
+  push();
+  fill(colour);
+  noStroke();
+  textStyle(BOLD);
+  textSize(size);
+  textAlign(CENTER, CENTER);
+  text(label, bounds.x + bounds.w / 2, bounds.y + bounds.h / 2 + yOffset);
+  pop();
+}
+
+function drawAsset(source, destination) {
+  image(
+    interactionAssetSheet,
+    destination.x,
+    destination.y,
+    destination.w,
+    destination.h,
+    source.x,
+    source.y,
+    source.w,
+    source.h
+  );
+}
+
+function drawAssetContained(source, destination) {
+  const scale = min(destination.w / source.w, destination.h / source.h);
+  const widthValue = round(source.w * scale);
+  const heightValue = round(source.h * scale);
+  image(
+    interactionAssetSheet,
+    round(destination.x + (destination.w - widthValue) / 2),
+    round(destination.y + (destination.h - heightValue) / 2),
+    widthValue,
+    heightValue,
+    source.x,
+    source.y,
+    source.w,
+    source.h
+  );
+}
+
+function prepareComicAssets() {
+  const nativeCatchIds = ["trout", "pike", "bass", "carp", "perch", "boot", "weeds", "rubbish"];
+  const resultById = {};
+  const archiveById = {};
+  for (let index = 0; index < nativeCatchIds.length; index += 1) {
+    const column = index % 4;
+    const row = floor(index / 4);
+    const catchId = nativeCatchIds[index];
+    const resultCell = getGridCell(catchResultsNativeSheet, 4, 2, column, row, 12);
+    const resultSprite = keyedCrop(catchResultsNativeSheet, resultCell, false);
+    resultById[catchId] = { image: resultSprite, crop: findVisibleBounds(resultSprite, catchId) };
+
+    const archiveCell = getGridCell(archiveCatchesNativeSheet, 4, 2, column, row, 12);
+    const archiveSprite = keyedCrop(archiveCatchesNativeSheet, archiveCell, false);
+    archiveById[catchId] = { image: archiveSprite, crop: findVisibleBounds(archiveSprite, catchId) };
+  }
+  for (const catchDefinition of CATCHES) {
+    catchResultSprites.push(resultById[catchDefinition.id]);
+    archiveCatchSprites.push(archiveById[catchDefinition.id]);
+  }
+
+  const keyedBackpack = keyedCrop(
+    backpackOpenNativeSource,
+    { x: 0, y: 0, w: backpackOpenNativeSource.width, h: backpackOpenNativeSource.height },
+    false
+  );
+  const backpackBounds = findVisibleBounds(keyedBackpack, "backpack");
+  backpackOpenNative = keyedBackpack.get(
+    backpackBounds.x,
+    backpackBounds.y,
+    backpackBounds.w,
+    backpackBounds.h
+  );
+
+  extractBandRow(fishingEffectsSheet, castComicFrames, 8, 112, 314, 18, 5);
+  extractBandRow(fishingEffectsSheet, biteComicFrames, 6, 410, 658, 18, 5);
+  extractBandRow(fishingEffectsSheet, tensionComicFrames, 8, 746, 978, 18, 5);
+
+  for (let row = 0; row < 2; row += 1) {
+    for (let column = 0; column < 5; column += 1) {
+      const cell = getGridCell(catchRevealSheet, 5, 2, column, row, 5);
+      catchRevealFrames.push(keyedCrop(catchRevealSheet, cell, false));
+    }
+  }
+
+  const targetShadowCells = [
+    { x: 30, y: 180, w: 410, h: 320 },
+    { x: 450, y: 210, w: 430, h: 280 },
+    { x: 895, y: 210, w: 475, h: 280 },
+    { x: 1375, y: 175, w: 365, h: 330 },
+    { x: 1755, y: 170, w: 400, h: 340 }
+  ];
+  for (const cell of targetShadowCells) {
+    const shadow = keyedCrop(targetShadowsNativeSheet, cell, false);
+    const shadowBounds = findVisibleBounds(shadow, "target");
+    targetShadowFrames.push(shadow.get(shadowBounds.x, shadowBounds.y, shadowBounds.w, shadowBounds.h));
+  }
+  for (let column = 0; column < 8; column += 1) {
+    const cell = getGridCell(targetLockSheet, 8, 2, column, 1, 4);
+    targetLockFrames.push(removeTargetPanel(targetLockSheet, cell));
+  }
+
+  for (let column = 0; column < 6; column += 1) {
+    const cell = getGridCell(saveComicSheet, 6, 2, column, 0, 5);
+    const keyedStamp = keyedCrop(saveComicSheet, cell, false);
+    const visibleStamp = findVisibleBounds(keyedStamp, "save");
+    saveStampFrames.push(keyedStamp.get(visibleStamp.x, visibleStamp.y, visibleStamp.w, visibleStamp.h));
+  }
+  extractGridRow(saveComicSheet, comicOrnaments, 6, 1, 2, 5);
+
+  for (let column = 0; column < 8; column += 1) {
+    const cell = getGridCell(tackleSelectSheet, 8, 1, column, 0, 7);
+    tackleSelectFrames.push(keyedCrop(tackleSelectSheet, cell, true));
+  }
+}
+
+function extractBandRow(sheet, target, columns, top, bottom, horizontalInset, verticalInset) {
+  for (let column = 0; column < columns; column += 1) {
+    const x0 = floor(sheet.width * column / columns) + horizontalInset;
+    const x1 = floor(sheet.width * (column + 1) / columns) - horizontalInset;
+    const cell = {
+      x: x0,
+      y: top + verticalInset,
+      w: max(1, x1 - x0),
+      h: max(1, bottom - top - verticalInset * 2)
+    };
+    target.push(keyedCrop(sheet, cell, false));
+  }
+}
+
+function removeTargetPanel(sheet, crop) {
+  const output = sheet.get(crop.x, crop.y, crop.w, crop.h);
+  output.loadPixels();
+  for (let index = 0; index < output.pixels.length; index += 4) {
+    const r = output.pixels[index];
+    const g = output.pixels[index + 1];
+    const b = output.pixels[index + 2];
+    const dr = r - 2;
+    const dg = g - 82;
+    const db = b - 109;
+    if (dr * dr + dg * dg + db * db <= 24 * 24) output.pixels[index + 3] = 0;
+  }
+  output.updatePixels();
+  const bounds = findVisibleBounds(output, "target");
+  return output.get(bounds.x, bounds.y, bounds.w, bounds.h);
+}
+
+function extractGridRow(sheet, target, columns, row, rows, inset) {
+  for (let column = 0; column < columns; column += 1) {
+    const cell = getGridCell(sheet, columns, rows, column, row, inset);
+    target.push(keyedCrop(sheet, cell, false));
+  }
+}
+
+function getGridCell(sheet, columns, rows, column, row, inset = 0) {
+  const x0 = floor(sheet.width * column / columns) + inset;
+  const x1 = floor(sheet.width * (column + 1) / columns) - inset;
+  const y0 = floor(sheet.height * row / rows) + inset;
+  const y1 = floor(sheet.height * (row + 1) / rows) - inset;
+  return { x: x0, y: y0, w: max(1, x1 - x0), h: max(1, y1 - y0) };
+}
+
+function keyedCrop(sheet, crop, removeDarkPanel) {
+  const output = sheet.get(crop.x, crop.y, crop.w, crop.h);
+  output.loadPixels();
+  for (let index = 0; index < output.pixels.length; index += 4) {
+    const r = output.pixels[index];
+    const g = output.pixels[index + 1];
+    const b = output.pixels[index + 2];
+    const magentaCore = r > 140 && b > 120 && g < 140 && r + b > g * 2.65;
+    const magentaFringe =
+      r > 52 &&
+      b > 62 &&
+      r > g * 1.35 &&
+      b > g * 1.35 &&
+      r + b - g * 2 > 86;
+    const magenta = magentaCore || magentaFringe;
+    const darkPanel = removeDarkPanel && r < 42 && g < 75 && b < 88;
+    if (magenta || darkPanel) output.pixels[index + 3] = 0;
+  }
+  output.updatePixels();
+  return output;
+}
+
+function createArchiveCatchSprite(source, catchId) {
+  source.loadPixels();
+  const output = createImage(source.width, source.height);
+  output.loadPixels();
+
+  for (let y = 0; y < source.height; y += 1) {
+    for (let x = 0; x < source.width; x += 1) {
+      const index = 4 * (y * source.width + x);
+      const r = source.pixels[index];
+      const g = source.pixels[index + 1];
+      const b = source.pixels[index + 2];
+      const a = source.pixels[index + 3];
+      const lowerHalf = y > source.height * 0.34;
+      const skin = lowerHalf && r > 88 && r > g * 1.12 && r - b > 30 && g > b * 0.78;
+      const sleeve = y > source.height * 0.48 && r < 95 && g < 125 && b < 135 && g > r * 0.72;
+      const lowerDebris = y > source.height * 0.72;
+      const removePixel = skin || sleeve || lowerDebris;
+
+      output.pixels[index] = r;
+      output.pixels[index + 1] = g;
+      output.pixels[index + 2] = b;
+      output.pixels[index + 3] = removePixel ? 0 : a;
+    }
+  }
+  output.updatePixels();
+  keepLargestArchiveComponent(output);
+
+  return {
+    image: output,
+    crop: findVisibleBounds(output, catchId)
+  };
+}
+
+function keepLargestArchiveComponent(source) {
+  source.loadPixels();
+  const widthValue = source.width;
+  const heightValue = source.height;
+  const pixelCount = widthValue * heightValue;
+  const visited = new Uint8Array(pixelCount);
+  const labels = new Int32Array(pixelCount);
+  const componentSizes = [0];
+  const queue = new Int32Array(pixelCount);
+  let componentId = 0;
+
+  for (let start = 0; start < pixelCount; start += 1) {
+    if (visited[start] || source.pixels[start * 4 + 3] < 32) continue;
+    componentId += 1;
+    let head = 0;
+    let tail = 1;
+    let size = 0;
+    queue[0] = start;
+    visited[start] = 1;
+
+    while (head < tail) {
+      const current = queue[head];
+      head += 1;
+      labels[current] = componentId;
+      size += 1;
+      const x = current % widthValue;
+      const y = floor(current / widthValue);
+
+      for (let offsetY = -1; offsetY <= 1; offsetY += 1) {
+        for (let offsetX = -1; offsetX <= 1; offsetX += 1) {
+          if (offsetX === 0 && offsetY === 0) continue;
+          const nextX = x + offsetX;
+          const nextY = y + offsetY;
+          if (nextX < 0 || nextX >= widthValue || nextY < 0 || nextY >= heightValue) continue;
+          const next = nextY * widthValue + nextX;
+          if (visited[next] || source.pixels[next * 4 + 3] < 32) continue;
+          visited[next] = 1;
+          queue[tail] = next;
+          tail += 1;
+        }
+      }
+    }
+    componentSizes[componentId] = size;
+  }
+
+  let largestId = 0;
+  let largestSize = 0;
+  for (let id = 1; id < componentSizes.length; id += 1) {
+    if (componentSizes[id] > largestSize) {
+      largestId = id;
+      largestSize = componentSizes[id];
+    }
+  }
+
+  for (let index = 0; index < pixelCount; index += 1) {
+    if (labels[index] !== largestId) source.pixels[index * 4 + 3] = 0;
+  }
+  source.updatePixels();
+}
+
+function findVisibleBounds(source, catchId) {
+  source.loadPixels();
+  let minX = source.width;
+  let minY = source.height;
+  let maxX = -1;
+  let maxY = -1;
+  for (let y = 0; y < source.height; y += 1) {
+    for (let x = 0; x < source.width; x += 1) {
+      const alpha = source.pixels[4 * (y * source.width + x) + 3];
+      if (alpha < 32) continue;
+      minX = min(minX, x);
+      minY = min(minY, y);
+      maxX = max(maxX, x);
+      maxY = max(maxY, y);
+    }
+  }
+  if (maxX < minX || maxY < minY) return { x: 0, y: 0, w: source.width, h: source.height };
+  const padding = catchId === "weeds" ? 2 : 6;
+  return {
+    x: max(0, minX - padding),
+    y: max(0, minY - padding),
+    w: min(source.width - minX + padding, maxX - minX + 1 + padding * 2),
+    h: min(source.height - minY + padding, maxY - minY + 1 + padding * 2)
+  };
+}
+
+function drawArchiveCatchSprite(sprite, destination) {
+  if (!sprite) return;
+  const crop = sprite.crop;
+  const scale = min(destination.w / crop.w, destination.h / crop.h);
+  const widthValue = round(crop.w * scale);
+  const heightValue = round(crop.h * scale);
+  image(
+    sprite.image,
+    round(destination.x + (destination.w - widthValue) / 2),
+    round(destination.y + (destination.h - heightValue) / 2),
+    widthValue,
+    heightValue,
+    crop.x,
+    crop.y,
+    crop.w,
+    crop.h
+  );
+}
+
+function drawFrame(bounds) {
+  noStroke();
+  fill(C.paper);
+  rect(bounds.x, bounds.y, bounds.w, bounds.h);
+  fill(C.ink);
+  rect(bounds.x + 8, bounds.y + 8, bounds.w - 16, bounds.h - 16);
+}
+
+function setHoverTip(bounds, title, effect, caution) {
+  if (!game.hoverTip && pointInRect(mouseX, mouseY, bounds)) game.hoverTip = { title, effect, caution };
+}
+
+function drawHoverTip() {
+  if (!game.hoverTip) return;
+  const tip = game.hoverTip;
+  const w = 300;
+  const h = 112;
+  const x = constrain(mouseX + 24, 18, W - w - 18);
+  const y = constrain(mouseY > H / 2 ? mouseY - h - 24 : mouseY + 24, 86, H - h - 18);
+  drawAsset(INTERACTION_ASSETS.tooltip, { x, y, w, h });
+  fill(C.yellow);
+  textStyle(BOLD);
+  textSize(12);
+  text(tip.title, x + 18, y + 25);
+  fill(C.paper);
+  textStyle(NORMAL);
+  textSize(11);
+  text(tip.effect, x + 18, y + 48, w - 36, 24);
+  fill(C.mist);
+  text(tip.caution, x + 18, y + 78, w - 36, 24);
+}
+
 function drawInterface(now) {
+  game.hoverTip = null;
+  if (game.state === "question") {
+    drawQuestionScreen(now);
+    return;
+  }
+  if (game.state === "tackle") {
+    drawTackleScreen();
+    return;
+  }
   if (game.flash > 0) {
     noStroke();
     fill(223, 186, 98, game.flash * 42);
@@ -891,7 +1775,11 @@ function drawInterface(now) {
   if (game.state === "charging") drawChargeMeter();
   if (game.state === "hooked") drawTensionMeter();
   if (game.state === "bite") drawBitePrompt(now);
-  if (["caught", "failed"].includes(game.state)) drawResultBanner();
+  if (game.state === "failed") drawResultBanner();
+  if (game.state === "impact") drawCatchImpact(now);
+  if (game.state === "result") drawCatchResult();
+  if (game.state === "archive") drawArchive();
+  if (!["impact", "result", "archive"].includes(game.state)) drawBackpackButton();
 }
 
 function drawTopBar() {
@@ -901,7 +1789,7 @@ function drawTopBar() {
 
   fill(C.paper);
   textStyle(BOLD);
-  textSize(27);
+  textSize(30);
   text("THE ANGLER", 34, 50);
 
   fill(C.forestMid);
@@ -909,21 +1797,8 @@ function drawTopBar() {
 
   fill(C.mist);
   textStyle(NORMAL);
-  textSize(17);
+  textSize(20);
   text("DAYLIGHT RIVER", 292, 49);
-
-  fill(C.paper);
-  textAlign(CENTER, BASELINE);
-  text("CURRENT", W / 2 - 70, 49);
-  fill(C.riverLight);
-  rect(W / 2 + 8, 34, 150, 12);
-  fill(C.paper);
-  rect(W / 2 + 8, 34, 96, 12);
-
-  textAlign(RIGHT, BASELINE);
-  fill(C.mist);
-  text("PARTIAL VIEW", W - 34, 49);
-  textAlign(LEFT, BASELINE);
 }
 
 function drawBottomStatus(now) {
@@ -935,17 +1810,17 @@ function drawBottomStatus(now) {
   rect(34, H - 68, 5, 42);
 
   textStyle(BOLD);
-  textSize(17);
+  textSize(22);
   text(copy.label, 58, H - 51);
   fill(C.paper);
   textStyle(NORMAL);
-  textSize(15);
+  textSize(18);
   text(copy.detail, 58, H - 29);
 
   if (game.state === "ready") {
     const pulse = 0.72 + sin(now * 0.005) * 0.18;
     const aimY = constrain(mouseY, 520, 800);
-    const aimX = max(constrain(mouseX, 600, 1620), getWaterLeft(aimY) + 70);
+    const aimX = max(constrain(mouseX, 850, 1650), getWaterLeft(aimY) + 70);
     noFill();
     stroke(C.yellow);
     strokeWeight(3);
@@ -954,14 +1829,17 @@ function drawBottomStatus(now) {
 }
 
 function getStatusCopy() {
+  const castLabel = `CAST ${String(game.runNumber).padStart(2, "0")}`;
   switch (game.state) {
-    case "ready": return { label: "CAST 01", detail: "AIM AT THE RIVER  /  HOLD MOUSE TO CHARGE", colour: C.yellow };
-    case "charging": return { label: "CAST 01", detail: "RELEASE TO CAST", colour: C.yellow };
+    case "ready": return { label: castLabel, detail: "AIM AT THE RIVER  /  HOLD MOUSE TO CHARGE", colour: C.yellow };
+    case "charging": return { label: castLabel, detail: "RELEASE TO CAST", colour: C.yellow };
     case "flying": return { label: "IN FLIGHT", detail: "WATCH THE LINE", colour: C.paper };
     case "waiting": return { label: "BENEATH", detail: "HOLD MOUSE TO RETRIEVE  /  READ THE WATER", colour: C.riverLight };
     case "bite": return { label: "A SIGNAL", detail: "CLICK NOW TO SET THE HOOK", colour: C.yellow };
     case "hooked": return { label: "ON THE LINE", detail: "HOLD TO PULL  /  RELEASE TO EASE THE TENSION", colour: C.yellow };
-    case "caught": return { label: "LANDED", detail: "CLICK TO LOOK BENEATH AGAIN", colour: C.yellow };
+    case "impact": return { label: "LANDED", detail: "A RESPONSE HAS SURFACED", colour: C.yellow };
+    case "result": return { label: "INSPECT", detail: "JUDGE THE RESPONSE  /  THEN CAST AGAIN, CHANGE TACKLE OR SET A NEW TARGET", colour: C.yellow };
+    case "archive": return { label: "CATCH ARCHIVE", detail: "SAVED FOR REVIEW DOES NOT MEAN VERIFIED", colour: C.riverLight };
     default: return { label: "NO CATCH", detail: "CLICK TO CAST AGAIN", colour: C.red };
   }
 }
@@ -1055,8 +1933,359 @@ function getResultDetail() {
   return "THE WATER RETURNED NOTHING";
 }
 
+function drawCatchImpact(now) {
+  if (!game.currentCatch) return;
+  noStroke();
+  fill(7, 24, 30, 238);
+  rect(0, 82, W, H - 174);
+
+  const elapsed = now - game.stateStarted;
+  const frame = min(catchRevealFrames.length - 1, floor(elapsed / 108));
+  if (frame >= 0 && catchRevealFrames[frame]) {
+    image(catchRevealFrames[frame], W / 2 - 410, H / 2 - 270, 820, 520);
+  }
+  textAlign(CENTER, CENTER);
+  textStyle(BOLD);
+  textSize(48);
+  fill(C.paper);
+  text("A RESPONSE SURFACES", W / 2, H / 2 + 185);
+  textAlign(LEFT, BASELINE);
+}
+
+function drawCatchResult() {
+  const catchData = game.currentCatch;
+  if (!catchData) return;
+  const catchIndex = CATCHES.findIndex((item) => item.id === catchData.id);
+
+  background(C.ink);
+  image(resultScreenBase, UI_ART.x, UI_ART.y, UI_ART.w, UI_ART.h);
+  drawSpriteContainedBottom(catchResultSprites[catchIndex], { x: 128, y: 104, w: 880, h: 748 });
+
+  drawCatchResultInfo(catchData, getSelectedTackle(), game.question);
+  drawSaveStamp();
+}
+
+function drawSaveStamp() {
+  if (!game.saveStampAt || saveStampFrames.length === 0) return;
+  const elapsed = millis() - game.saveStampAt;
+  if (elapsed > 1700) return;
+  const frame = min(saveStampFrames.length - 1, floor(elapsed / 190));
+  const stamp = saveStampFrames[frame];
+  push();
+  tint(255, elapsed > 1450 ? map(elapsed, 1450, 1700, 255, 0) : 255);
+  drawImageContained(stamp, { x: 124, y: 92, w: 884, h: 748 });
+  noTint();
+  pop();
+}
+
+function drawSpriteContainedBottom(spriteRecord, destination) {
+  if (!spriteRecord || !spriteRecord.image) return;
+  const source = spriteRecord.image;
+  const crop = spriteRecord.crop || { x: 0, y: 0, w: source.width, h: source.height };
+  const scaleValue = min(destination.w / crop.w, destination.h / crop.h);
+  const widthValue = round(crop.w * scaleValue);
+  const heightValue = round(crop.h * scaleValue);
+  image(
+    source,
+    round(destination.x + (destination.w - widthValue) / 2),
+    round(destination.y + destination.h - heightValue),
+    widthValue,
+    heightValue,
+    crop.x,
+    crop.y,
+    crop.w,
+    crop.h
+  );
+}
+
+function drawCatchResultInfo(catchData, profile, question) {
+  const x = 1060;
+  fill(C.yellow);
+  textStyle(BOLD);
+  textSize(20);
+  text("YOUR QUESTION", x, 130);
+  fill(C.paper);
+  textStyle(NORMAL);
+  textSize(24);
+  text(question, x, 166, 660, 70);
+
+  fill(C.yellow);
+  textStyle(BOLD);
+  textSize(22);
+  text("WHAT SURFACED", x, 284);
+  fill(C.paper);
+  textStyle(NORMAL);
+  textSize(28);
+  textWrap(WORD);
+  text(catchData.candidate, x, 326, 660, 300);
+
+  drawUiCenteredText(game.judgement === "keep" ? "KEPT FOR REVIEW" : "KEEP FOR REVIEW", RESULT_BUTTONS.keep, 24, C.ink, 0);
+  drawUiCenteredText(game.judgement === "release" ? "RELEASED" : "RELEASE", RESULT_BUTTONS.release, 24, C.paper, 0);
+  const actionColour = game.judgement ? C.paper : C.mist;
+  drawUiCenteredText("CAST AGAIN", RESULT_BUTTONS.recast, 22, actionColour, 0);
+  drawUiCenteredText("CHANGE TACKLE", RESULT_BUTTONS.retackle, 22, actionColour, 0);
+  drawUiCenteredText("NEW TARGET", RESULT_BUTTONS.newTarget, 22, actionColour, 0);
+}
+
+function drawCatchInfo(catchData, x, y, w, h, profile = null, question = EXAMPLE_QUESTION) {
+  fill(C.paper);
+  noStroke();
+  rect(x, y, w, h);
+  fill(C.ink);
+  rect(x + 8, y + 8, w - 16, h - 16);
+
+  fill(C.yellow);
+  textStyle(BOLD);
+  textSize(20);
+  text("YOUR QUESTION", x + 42, y + 52);
+  fill(C.paper);
+  textStyle(NORMAL);
+  textSize(23);
+  text(question, x + 42, y + 88, w - 84, 70);
+
+  fill(C.yellow);
+  textStyle(BOLD);
+  textSize(20);
+  text("WHAT SURFACED", x + 42, y + 188);
+  fill(C.paper);
+  textStyle(NORMAL);
+  textSize(25);
+  textWrap(WORD);
+  text(catchData.candidate, x + 42, y + 226, w - 84, 220);
+
+  fill(C.yellow);
+  textStyle(BOLD);
+  textSize(20);
+  text("CATCH RECORD", x + 42, y + 508);
+  fill(C.paper);
+  textStyle(NORMAL);
+  textSize(22);
+  text(`${catchData.name}  /  ${catchData.response}`, x + 42, y + 546, w - 84, 44);
+
+  fill(C.inkSoft);
+  rect(x + 42, y + h - 54, w - 84, 2);
+  fill(C.mist);
+  textStyle(NORMAL);
+  textSize(17);
+  text("SAVED FOR REVIEW, NOT VERIFIED", x + 42, y + h - 22);
+}
+
+function getSelectedTackle() {
+  return TACKLE_PROFILES.find((profile) => profile.id === game.selectedTackleId) || null;
+}
+
+function getTackleSummary(profile) {
+  if (!profile) return "NO CONFIGURATION RECORDED";
+  return `${TACKLE_TYPES[profile.type].name}  /  ${TACKLE_COLOURS[profile.colour].name}  /  ${TACKLE_WEIGHTS[profile.weight].name}  /  ${RETRIEVES[profile.retrieve].name}`;
+}
+
+function drawMetric(label, value, x, y, widthValue) {
+  fill(C.paper);
+  textStyle(BOLD);
+  textSize(15);
+  text(label, x, y);
+  const gap = 8;
+  const cellWidth = floor((widthValue - gap * 4) / 5);
+  for (let i = 0; i < 5; i += 1) {
+    fill(i < value ? C.yellow : C.inkSoft);
+    rect(x + i * (cellWidth + gap), y + 18, cellWidth, 16);
+  }
+  if (label === "RELEVANCE") {
+    setHoverTip({ x, y: y - 6, w: widthValue, h: 54 }, "RELEVANCE", "How closely this response addresses the question.", "A close answer may still contain errors.");
+  } else {
+    setHoverTip({ x, y: y - 6, w: widthValue, h: 54 }, "UNCERTAINTY", "How much doubt or missing context remains.", "The meter is a prompt to inspect, not a fact score.");
+  }
+}
+
+function drawUiButton(bounds, label, backgroundColour, textColour) {
+  const hover = pointInRect(mouseX, mouseY, bounds);
+  fill(C.paper);
+  noStroke();
+  rect(bounds.x, bounds.y, bounds.w, bounds.h);
+  fill(hover ? C.paper : backgroundColour);
+  rect(bounds.x + 6, bounds.y + 6, bounds.w - 12, bounds.h - 12);
+  drawUiCenteredText(label, bounds, 20, hover ? C.ink : textColour, -5);
+}
+
+function drawBackpackButton() {
+  const hover = pointInRect(mouseX, mouseY, BACKPACK_BUTTON);
+  noStroke();
+  if (hover) {
+    fill(C.yellow);
+    rect(BACKPACK_BUTTON.x, BACKPACK_BUTTON.y + BACKPACK_BUTTON.h - 3, BACKPACK_BUTTON.w, 3);
+  }
+  image(backpackClosed, BACKPACK_BUTTON.x + 6, BACKPACK_BUTTON.y, 74, 70);
+  fill(C.yellow);
+  rect(BACKPACK_BUTTON.x + 56, BACKPACK_BUTTON.y + 43, 28, 24);
+  drawUiCenteredText(String(game.inventory.length), { x: BACKPACK_BUTTON.x + 56, y: BACKPACK_BUTTON.y + 43, w: 28, h: 24 }, 13, C.ink, -3);
+}
+
+function drawArchive() {
+  noStroke();
+  fill(7, 24, 30, 248);
+  rect(0, 82, W, H - 174);
+
+  const bag = { x: 58, y: 96, w: 900, h: 842 };
+  image(backpackOpenNative || backpackOpen, bag.x, bag.y, bag.w, bag.h);
+
+  const visibleEntries = game.inventory.slice(0, 8);
+  for (let index = 0; index < visibleEntries.length; index += 1) {
+    const slot = getArchiveSlotBounds(index, bag);
+    const entry = visibleEntries[index];
+    const catchIndex = CATCHES.findIndex((item) => item.id === entry.id);
+    if (index === game.archiveSelected) {
+      noFill();
+      stroke(C.yellow);
+      strokeWeight(6);
+      rect(slot.x - 5, slot.y - 5, slot.w + 10, slot.h + 10);
+      noStroke();
+    }
+    drawArchiveCatchSprite(archiveCatchSprites[catchIndex], {
+      x: slot.x + 14,
+      y: slot.y + 14,
+      w: slot.w - 28,
+      h: slot.h - 28
+    });
+  }
+
+  if (visibleEntries.length === 0) {
+    fill(C.paper);
+    textAlign(CENTER, CENTER);
+    textStyle(BOLD);
+    textSize(28);
+    text("NO CATCHES KEPT FOR REVIEW", bag.x + bag.w / 2, bag.y + bag.h / 2 + 32);
+    textAlign(LEFT, BASELINE);
+  }
+
+  // The source artwork ends beneath the slide-out record panel. A solid
+  // divider keeps that join intentional and prevents crop remnants showing.
+  noStroke();
+  fill(C.ink);
+  rect(950, 120, W - 950, 820);
+
+  const selectedEntry = visibleEntries[game.archiveSelected];
+  if (selectedEntry) {
+    const catchData = CATCHES.find((item) => item.id === selectedEntry.id);
+    const profile = TACKLE_PROFILES.find((item) => item.id === selectedEntry.tackleId) || null;
+    drawCatchInfo(catchData, 970, 144, 884, 676, profile, selectedEntry.question || EXAMPLE_QUESTION);
+    fill(C.mist);
+    textSize(18);
+    text(`CAST ${String(selectedEntry.cast).padStart(2, "0")}  /  SAVED ${selectedEntry.savedAt}`, 1012, 858);
+  } else {
+    fill(C.paper);
+    rect(970, 144, 884, 676);
+    fill(C.ink);
+    rect(978, 152, 868, 660);
+    fill(C.yellow);
+    textStyle(BOLD);
+    textSize(30);
+    text("CATCH ARCHIVE", 1016, 214);
+    fill(C.mist);
+    textStyle(NORMAL);
+    textSize(18);
+    textWrap(WORD);
+    text("Keep a response after landing it, then return here to compare what surfaced across different casts.", 1016, 260, 760, 140);
+  }
+
+  drawUiButton({ x: 1654, y: 848, w: 200, h: 62 }, "CLOSE", C.riverLight, C.ink);
+}
+
+function pointInRect(x, y, bounds) {
+  return x >= bounds.x && x <= bounds.x + bounds.w && y >= bounds.y && y <= bounds.y + bounds.h;
+}
+
+function getArchiveSlotAt(x, y) {
+  const bag = { x: 58, y: 96, w: 900, h: 842 };
+  const visibleCount = min(8, game.inventory.length);
+  for (let index = 0; index < visibleCount; index += 1) {
+    const slot = getArchiveSlotBounds(index, bag);
+    if (pointInRect(x, y, slot)) return index;
+  }
+  return -1;
+}
+
+function getArchiveSlotBounds(index, bag = { x: 58, y: 96, w: 900, h: 842 }) {
+  const column = index % 4;
+  const row = floor(index / 4);
+  const lefts = [0.113, 0.314, 0.516, 0.716];
+  const tops = [0.229, 0.509];
+  return {
+    x: round(bag.x + lefts[column] * bag.w),
+    y: round(bag.y + tops[row] * bag.h),
+    w: round(0.184 * bag.w),
+    h: round(0.256 * bag.h)
+  };
+}
+
 function mousePressed() {
-  if (game.state === "ready" && mouseY > 470 && mouseY < 830 && mouseX > 520) {
+  if (game.state === "impact") return false;
+
+  if (game.state === "question") {
+    if (pointInRect(mouseX, mouseY, QUESTION_BOUNDS.input)) {
+      game.questionFocused = true;
+    } else if (pointInRect(mouseX, mouseY, QUESTION_BOUNDS.example)) {
+      game.question = EXAMPLE_QUESTION;
+      game.questionFocused = true;
+      noteQuestionEdit();
+    } else if (pointInRect(mouseX, mouseY, QUESTION_BOUNDS.confirm)) {
+      confirmQuestion();
+    } else {
+      game.questionFocused = false;
+    }
+    return false;
+  }
+
+  if (game.state === "tackle") {
+    if (pointInRect(mouseX, mouseY, TACKLE_BOUNDS.refresh)) {
+      refreshRecommendations();
+      return false;
+    }
+    for (let index = 0; index < TACKLE_BOUNDS.cards.length; index += 1) {
+      if (pointInRect(mouseX, mouseY, TACKLE_BOUNDS.cards[index])) {
+        game.selectedRecommendation = index;
+        game.tackleSelectAt = millis();
+        return false;
+      }
+    }
+    if (pointInRect(mouseX, mouseY, TACKLE_BOUNDS.back)) {
+      setState("question");
+      game.questionFocused = true;
+    } else if (pointInRect(mouseX, mouseY, TACKLE_BOUNDS.confirm)) {
+      beginFishingWithTackle();
+    }
+    return false;
+  }
+
+  if (game.state === "result") {
+    if (pointInRect(mouseX, mouseY, RESULT_BUTTONS.keep)) {
+      setCatchJudgement("keep");
+    } else if (pointInRect(mouseX, mouseY, RESULT_BUTTONS.release)) {
+      setCatchJudgement("release");
+    } else if (game.judgement && pointInRect(mouseX, mouseY, RESULT_BUTTONS.recast)) {
+      resetCast();
+    } else if (game.judgement && pointInRect(mouseX, mouseY, RESULT_BUTTONS.retackle)) {
+      game.selectedRecommendation = -1;
+      refreshRecommendations();
+      setState("tackle");
+    } else if (game.judgement && pointInRect(mouseX, mouseY, RESULT_BUTTONS.newTarget)) {
+      startNewTarget();
+    }
+    return false;
+  }
+
+  if (game.state === "archive") {
+    const slotIndex = getArchiveSlotAt(mouseX, mouseY);
+    if (slotIndex >= 0) game.archiveSelected = slotIndex;
+    if (pointInRect(mouseX, mouseY, { x: 1654, y: 848, w: 200, h: 62 })) closeArchive();
+    return false;
+  }
+
+  if (pointInRect(mouseX, mouseY, BACKPACK_BUTTON)) {
+    openArchive();
+    return false;
+  }
+
+  if (game.state === "ready" && mouseY > 470 && mouseY < 830 && mouseX > 760) {
     game.charge = 0;
     setState("charging");
     return false;
@@ -1067,7 +2296,7 @@ function mousePressed() {
     return false;
   }
 
-  if (["caught", "failed"].includes(game.state)) {
+  if (game.state === "failed") {
     resetCast();
     return false;
   }
@@ -1081,14 +2310,86 @@ function mouseReleased() {
 }
 
 function keyPressed() {
-  if (key === "r" || key === "R" || keyCode === ESCAPE) resetCast();
+  if (game.state === "question") {
+    if (keyCode === BACKSPACE || keyCode === DELETE) {
+      game.question = game.question.slice(0, -1);
+      noteQuestionEdit();
+      return false;
+    }
+    if (keyCode === ENTER || keyCode === RETURN) {
+      confirmQuestion();
+      return false;
+    }
+    if (keyCode === ESCAPE) game.questionFocused = false;
+    return true;
+  }
+  if (game.state === "tackle" && keyCode === ESCAPE) {
+    setState("question");
+    game.questionFocused = true;
+    return false;
+  }
+  if (game.state === "archive" && keyCode === ESCAPE) closeArchive();
+  else if (key === "r" || key === "R" || keyCode === ESCAPE) resetCast();
+}
+
+function keyTyped() {
+  if (game.state !== "question" || !game.questionFocused) return true;
+  if (key.length === 1 && key.charCodeAt(0) >= 32 && game.question.length < 140) {
+    game.question += key;
+    noteQuestionEdit();
+    return false;
+  }
+  return true;
+}
+
+function confirmQuestion() {
+  game.question = game.question.trim();
+  if (!game.question || game.targetLockAt > 0) return;
+  game.questionFocused = false;
+  game.targetLockAt = millis();
+}
+
+function refreshRecommendations() {
+  const next = [];
+  while (next.length < 3) {
+    if (game.recommendationDeck.length === 0) {
+      game.recommendationDeck = shuffle(TACKLE_PROFILES.map((_, index) => index), true);
+    }
+    next.push(game.recommendationDeck.shift());
+  }
+  game.recommendations = next;
+  game.selectedRecommendation = -1;
+}
+
+function beginFishingWithTackle() {
+  if (game.selectedRecommendation < 0) return;
+  const profileIndex = game.recommendations[game.selectedRecommendation];
+  const profile = TACKLE_PROFILES[profileIndex];
+  game.selectedTackleId = profile.id;
+  prepareCast(false);
+}
+
+function startNewTarget() {
+  game.question = "";
+  game.questionFocused = true;
+  game.targetShadowIndex = 0;
+  game.lastQuestionEditAt = 0;
+  game.selectedTackleId = null;
+  game.selectedRecommendation = -1;
+  game.recommendationDeck = [];
+  game.currentCatch = null;
+  game.judgement = null;
+  game.currentKept = false;
+  game.targetLockAt = 0;
+  game.saveStampAt = 0;
+  setState("question");
 }
 
 function castLine() {
   game.castPower = constrain(game.charge, 0.16, 1);
   const distance = map(game.castPower, 0.16, 1, 120, 340);
   game.castTarget.y = constrain(790 - distance * 0.42, 545, 745);
-  const aimX = constrain(mouseX, 600, 1620);
+  const aimX = constrain(mouseX, 850, 1650);
   game.castTarget.x = max(aimX, getWaterLeft(game.castTarget.y) + 110);
   game.retrieve = 0;
   game.shake = 2;
@@ -1112,14 +2413,65 @@ function hookFish() {
   setState("hooked");
 }
 
+function landRandomCatch() {
+  const index = floor(random(CATCHES.length));
+  game.currentCatch = CATCHES[index];
+  game.result = game.currentCatch.id;
+  game.shake = 6;
+  game.flash = 0.72;
+  game.judgement = null;
+  game.currentKept = false;
+  setState("impact");
+}
+
+function keepCurrentCatch() {
+  if (!game.currentCatch) return;
+  const now = new Date();
+  game.inventory.unshift({
+    id: game.currentCatch.id,
+    cast: game.runNumber,
+    question: game.question,
+    tackleId: game.selectedTackleId,
+    savedAt: now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+  });
+  if (game.inventory.length > 8) game.inventory.length = 8;
+  game.archiveSelected = 0;
+}
+
+function setCatchJudgement(nextJudgement) {
+  if (!game.currentCatch) return;
+  if (nextJudgement === "keep" && !game.currentKept) {
+    keepCurrentCatch();
+    game.currentKept = true;
+    game.saveStampAt = millis();
+  }
+  if (nextJudgement === "release" && game.currentKept) {
+    const savedIndex = game.inventory.findIndex((entry) => entry.cast === game.runNumber);
+    if (savedIndex >= 0) game.inventory.splice(savedIndex, 1);
+    game.currentKept = false;
+    game.saveStampAt = 0;
+  }
+  game.judgement = nextJudgement;
+}
+
+function openArchive() {
+  game.archiveReturnState = game.state === "failed" ? "failed" : "ready";
+  game.archiveSelected = game.inventory.length > 0 ? 0 : -1;
+  setState("archive");
+}
+
+function closeArchive() {
+  setState(game.archiveReturnState || "ready");
+}
+
 function finishRun(result) {
   game.result = result;
   game.shake = result === "fish" ? 6 : 3;
   game.flash = result === "fish" ? 0.7 : 0.22;
-  setState(result === "fish" || result === "weeds" ? "caught" : "failed");
+  setState("failed");
 }
 
-function resetCast() {
+function prepareCast(incrementRun = true) {
   game.state = "ready";
   game.stateStarted = millis();
   game.charge = 0;
@@ -1131,14 +2483,21 @@ function resetCast() {
   game.tension = 0.48;
   game.dangerTime = 0;
   game.result = null;
+  game.currentCatch = null;
+  game.judgement = null;
+  game.currentKept = false;
   game.ripples = [];
   game.splashes = [];
   game.lure.x = 520;
   game.lure.y = 610;
   game.observation.x = 1040;
   game.observation.y = 650;
-  game.runNumber += 1;
+  if (incrementRun) game.runNumber += 1;
   updateAccessibleStatus();
+}
+
+function resetCast() {
+  prepareCast(true);
 }
 
 function setState(nextState) {
@@ -1152,13 +2511,17 @@ function updateAccessibleStatus() {
   if (!status) return;
 
   const messages = {
+    question: "Enter the question that will become your target.",
+    tackle: "Choose one of three prompting configurations.",
     ready: "Ready to cast.",
     charging: "Charging the cast.",
     flying: "The lure is in flight.",
     waiting: "The lure is in the river. Hold the mouse to retrieve.",
     bite: "A fish is biting. Click now to set the hook.",
     hooked: "Fish hooked. Hold and release the mouse to control line tension.",
-    caught: "Catch landed. Click to cast again.",
+    impact: "A catch has surfaced.",
+    result: "Inspect the response and decide whether to keep it for review.",
+    archive: "Review the catches saved during this session.",
     failed: "The catch was lost. Click to cast again."
   };
 
@@ -1166,32 +2529,17 @@ function updateAccessibleStatus() {
 }
 
 function addRipple(x, y, colour, size) {
-  game.ripples.push({ x, y, colour, size, life: 0.05 });
+  game.ripples.push({ x, y, colour, size, life: 0 });
 }
 
 function addSplash(x, y, amount) {
-  for (let i = 0; i < amount; i += 1) {
-    game.splashes.push({
-      x: x + random(-14, 14),
-      y: y + random(-5, 5),
-      vx: random(-75, 75),
-      vy: random(-190, -64),
-      size: random(5, 12),
-      life: random(0.55, 1),
-      colour: random() > 0.68 ? C.yellow : C.paper
-    });
-  }
+  game.splashes.push({ x, y, life: 0, speed: amount > 10 ? 1.45 : 1.8 });
 }
 
 function updateEffects(dt) {
-  for (const ripple of game.ripples) ripple.life += dt * 0.75;
+  for (const ripple of game.ripples) ripple.life += dt * 1.35;
   game.ripples = game.ripples.filter((ripple) => ripple.life < 1);
 
-  for (const drop of game.splashes) {
-    drop.x += drop.vx * dt;
-    drop.y += drop.vy * dt;
-    drop.vy += 460 * dt;
-    drop.life -= dt;
-  }
-  game.splashes = game.splashes.filter((drop) => drop.life > 0);
+  for (const splash of game.splashes) splash.life += dt * splash.speed;
+  game.splashes = game.splashes.filter((splash) => splash.life < 1);
 }

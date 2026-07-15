@@ -20,7 +20,8 @@ const contentTypes = {
 };
 
 const server = http.createServer((request, response) => {
-  const requestPath = request.url === "/" ? "/index.html" : request.url;
+  const url = new URL(request.url, `http://${request.headers.host || "localhost"}`);
+  const requestPath = url.pathname === "/" ? "/index.html" : url.pathname;
   const relativePath = decodeURIComponent(requestPath).replace(/^[/\\]+/, "");
   const filePath = path.resolve(projectRoot, relativePath);
 
