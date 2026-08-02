@@ -4,6 +4,8 @@ const path = require("path");
 
 const port = process.env.PORT || 3001;
 const projectRoot = __dirname;
+const publicRoot = path.join(projectRoot, "public");
+const publicEntryFiles = new Set(["index.html", "sketch.js", "style.css"]);
 
 const contentTypes = {
   ".css": "text/css; charset=utf-8",
@@ -21,13 +23,35 @@ const contentTypes = {
 
 const server = http.createServer((request, response) => {
   const url = new URL(request.url, `http://${request.headers.host || "localhost"}`);
-  const requestPath = url.pathname === "/" ? "/index.html" : url.pathname;
-  const relativePath = decodeURIComponent(requestPath).replace(/^[/\\]+/, "");
-  const filePath = path.resolve(projectRoot, relativePath);
+  let requestPath;
 
-  if (!filePath.startsWith(projectRoot + path.sep)) {
-    response.writeHead(403);
-    response.end("Forbidden");
+  try {
+    requestPath = decodeURIComponent(url.pathname).replace(/\\/g, "/");
+  } catch {
+    response.writeHead(400);
+    response.end("Bad request");
+    return;
+  }
+
+  if (requestPath === "/") requestPath = "/index.html";
+
+  const rootEntryName = requestPath.slice(1);
+  let filePath = null;
+
+  if (publicEntryFiles.has(rootEntryName)) {
+    filePath = path.join(projectRoot, rootEntryName);
+  } else if (requestPath.startsWith("/public/")) {
+    const publicRelativePath = requestPath.slice("/public/".length);
+    const candidatePath = path.resolve(publicRoot, publicRelativePath);
+
+    if (candidatePath.startsWith(publicRoot + path.sep)) {
+      filePath = candidatePath;
+    }
+  }
+
+  if (!filePath) {
+    response.writeHead(404, { "X-Content-Type-Options": "nosniff" });
+    response.end("Not found");
     return;
   }
 
@@ -40,9 +64,10 @@ const server = http.createServer((request, response) => {
 
     const extension = path.extname(filePath).toLowerCase();
     response.writeHead(200, {
-      "Content-Type": contentTypes[extension] || "application/octet-stream"
+      "Content-Type": contentTypes[extension] || "application/octet-stream",
+      "X-Content-Type-Options": "nosniff"
     });
-    response.end(file);
+    response.end(request.method === "HEAD" ? undefined : file);
   });
 });
 

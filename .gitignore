@@ -17,3 +17,16 @@ Thumbs.db
 *.tmp
 *.log
 
+# browser and QA artifacts
+.playwright-cli/
+output/
+playwright-report/
+test-results/
+
+# generated Python caches
+__pycache__/
+*.py[cod]
+
+# local inspection images
+remote-current-contact.jpg
+remote-problem-locator.jpg

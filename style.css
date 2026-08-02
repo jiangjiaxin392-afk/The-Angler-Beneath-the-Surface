@@ -39,19 +39,37 @@ canvas {
   max-height: 100%;
   cursor: crosshair;
   image-rendering: pixelated;
+  outline: none;
+  border: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+canvas:focus,
+canvas:focus-visible {
+  outline: none;
+  box-shadow: none;
 }
 
 .loading {
   position: absolute;
   margin: 0;
   color: #e8e2d5;
+  display: grid;
+  gap: 10px;
+  place-items: center;
   font-size: 14px;
   letter-spacing: 0;
   pointer-events: none;
+  z-index: 2;
 }
 
-#canvasWrap:not(:empty) + .loading {
-  display: none;
+.loading strong {
+  color: #efc44f;
+  font-size: 20px;
+}
+
+.loading span {
+  opacity: 0.82;
 }
 
 noscript {

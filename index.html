@@ -5,17 +5,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>The Angler: Beneath the Surface?</title>
   <link rel="icon" href="data:," />
-  <link rel="stylesheet" href="style.css?v=20260714b" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.min.js"></script>
+  <link rel="stylesheet" href="style.css?v=20260730n" />
+  <script src="public/vendor/p5.min.js"></script>
 </head>
 <body>
   <main id="game" aria-label="The Angler fishing prototype">
     <div id="canvasWrap"></div>
-    <p class="loading">LOADING THE WATER...</p>
+    <div id="startupLoader" class="loading" role="status" aria-live="polite">
+      <strong>TUNING THE SIGNAL</strong>
+      <span>LOADING THE WATER...</span>
+    </div>
     <p id="gameStatus" class="sr-only" aria-live="polite">Ready to cast.</p>
   </main>
 
   <noscript>This prototype requires JavaScript.</noscript>
-  <script src="sketch.js?v=20260714f"></script>
+    <script src="sketch.js?v=20260802ah"></script>
 </body>
 </html>

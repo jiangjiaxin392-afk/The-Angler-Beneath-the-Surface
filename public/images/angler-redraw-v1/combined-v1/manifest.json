@@ -1,0 +1,18 @@
+{
+  "revision": "20260802-combined-v2-shoes",
+  "description": "Six independently drawn gameplay frames with the complete fishing rod integrated into the angler artwork.",
+  "rendering": {
+    "uniformScaleOnly": true,
+    "separateRodLayer": false,
+    "separateFishingLine": true,
+    "background": "transparent"
+  },
+  "frames": [
+    { "index": 0, "state": "ready", "file": "frames-alpha/frame-00-ready.png", "width": 1536, "height": 1024, "x": 248, "y": 536, "scale": 0.407, "tip": { "x": 1508, "y": 131 } },
+    { "index": 1, "state": "failed", "file": "frames-alpha/frame-01-failed.png", "width": 1672, "height": 941, "x": 175, "y": 518, "scale": 0.452, "tip": { "x": 1635, "y": 373 } },
+    { "index": 2, "state": "charging", "file": "frames-alpha/frame-02-charging-v2.png", "width": 1536, "height": 1024, "x": 223, "y": 487, "scale": 0.418, "tip": { "x": 1502, "y": 161 } },
+    { "index": 3, "state": "flying", "file": "frames-alpha/frame-03-cast.png", "width": 1635, "height": 962, "x": 261, "y": 489, "scale": 0.488, "tip": { "x": 1613, "y": 94 } },
+    { "index": 4, "state": "bite", "file": "frames-alpha/frame-04-bite-v2.png", "width": 1536, "height": 1024, "x": 217, "y": 516, "scale": 0.388, "tip": { "x": 1462, "y": 132 } },
+    { "index": 5, "state": "hooked", "file": "frames-alpha/frame-05-hooked.png", "width": 1536, "height": 1024, "x": 237, "y": 500, "scale": 0.408, "tip": { "x": 1495, "y": 207 } }
+  ]
+}
