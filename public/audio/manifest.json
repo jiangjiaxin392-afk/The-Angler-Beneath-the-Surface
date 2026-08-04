@@ -1,0 +1,193 @@
+{
+  "revision": "20260804-rain-volume-v16",
+  "tracks": [
+    {
+      "id": "cover-journey",
+      "file": "music/ahedarexia-blue-g-172788.mp3",
+      "role": "Background music from the first cover interaction or New Target through tackle selection",
+      "loop": true,
+      "defaultVolume": 0.38,
+      "sha256": "b79b22c399da3b7622f31ae2cde7f128db765502ce4e7f663f6c0bd7146812bd"
+    },
+    {
+      "id": "beer-opening",
+      "file": "sfx/opening-a-bottle-of-beer-trimmed.mp3",
+      "role": "Bottle-opening sound triggered by Start Experience at the beginning of the drinking scene",
+      "trimmedStartSeconds": 0.792,
+      "defaultVolume": 0.9,
+      "sha256": "6bacd6988782da00dcd72688415b9d1065f197e4cc9e00a1cf8a75be236cd9e7"
+    },
+    {
+      "id": "drinking",
+      "file": "sfx/drinking-from-aluminum-can-80082.mp3",
+      "role": "Drinking sound triggered when the bottle reaches the mouth frame",
+      "animationTriggerFrame": 9,
+      "defaultVolume": 0.82,
+      "sha256": "ff3de37838ac6686b3f81ba1c46666665ed09929cbd4b984d4a9102e09801ffd"
+    },
+    {
+      "id": "idea-hmmm",
+      "file": "sfx/hmmm-idea-male-420028.mp3",
+      "role": "Male hmmm sound played from the beginning of the idea animation; the vocal begins around 0.6 seconds",
+      "vocalStartSeconds": 0.6,
+      "playbackLeadSeconds": 0.5,
+      "defaultVolume": 1.0,
+      "sha256": "5a2baccb89aec61cbac020a13a18c350c15e7cc6e5c70a7c51b546ff29cf0bf7"
+    },
+    {
+      "id": "remote-button-press",
+      "file": "sfx/remote-button-press-382713.mp3",
+      "role": "Remote control button sound triggered on the actual button-press animation frame",
+      "animationTriggerFrames": [8, 16],
+      "defaultVolume": 1.0,
+      "sha256": "2af7e83b752fa57461e9d266cd56f1c478f6f1c1f52c40de0ed4f29b83c7f2ab"
+    },
+    {
+      "id": "tube-tv-opening",
+      "file": "sfx/old-tube-tv-opening-first-second.mp3",
+      "role": "First second of the old tube TV sound, synchronized with the CRT line expanding into the screen and stopped immediately when the cutscene is skipped",
+      "trimmedDurationSeconds": 1.008,
+      "playbackLeadSeconds": 0.5,
+      "defaultVolume": 0.9,
+      "sha256": "c243ad2621ee7680527c83979d89fc59688fd48024970ac5c53cc146c79ba6d8"
+    },
+    {
+      "id": "tv-static-noise",
+      "file": "sfx/tv-static-noise-291374.mp3",
+      "role": "Looping television static from the start of the camera push-in until the water selection is confirmed",
+      "loop": true,
+      "defaultVolume": 0.24,
+      "sha256": "63ee3c3463bc3b0ef4610fdc3346b61dc16cd2ef4a103ad6abc27fc280b2a2b2"
+    },
+    {
+      "id": "toolbox-opening",
+      "file": "sfx/toolbox-opening-40366.mp3",
+      "role": "One-shot toolbox opening sound during the toolbox opening animation",
+      "loop": false,
+      "defaultVolume": 1.0,
+      "sha256": "4406ef6b16971f82fa4ae6707a940135901723b9af0421dedd196335010b13a0"
+    },
+    {
+      "id": "toolbox-rummaging",
+      "file": "sfx/toolbox-rummaging-35825.mp3",
+      "role": "Looping rummaging sound that starts immediately when the toolbox opening sound ends and continues throughout tackle selection",
+      "loop": true,
+      "defaultVolume": 0.55,
+      "sha256": "b861cc7c0cb0074ffd691695b44be74030e0373ae35ec73f288bf53484bb9b79"
+    },
+    {
+      "id": "fishing-scenes",
+      "file": "music/fishing-scenes-japanese-music-560316.mp3",
+      "role": "Looping background music across every active fishing scene, paused during target, water and tackle selection",
+      "loop": true,
+      "defaultVolume": 0.5,
+      "sha256": "cd67ba3e484f1faf51e9fb1c9eaa4ab4aef6775aa0981bf1b1b368352dde9e17"
+    },
+    {
+      "id": "rod-charge",
+      "file": "sfx/rod-charge-tighten-199797.mp3",
+      "role": "One-shot rod tension sound while the mouse is held to charge a cast; stopped and reset on release",
+      "loop": false,
+      "defaultVolume": 1.0,
+      "sha256": "c22a0879d387bdfbed6c294c49d78456d90dbdf7c41b1cdd76b9e3ad8dc4759a"
+    },
+    {
+      "id": "rod-whoosh",
+      "file": "sfx/fishing-rod-whoosh-411640.mp3",
+      "role": "One-shot fishing rod whoosh triggered at the exact cast release event",
+      "loop": false,
+      "defaultVolume": 0.95,
+      "sha256": "d7a333ed8eef9d9dbb936dc19b3a1fe1cfdcc42982b7ae5aa2f38de2c2cd1b0a"
+    },
+    {
+      "id": "casting-grunt",
+      "file": "sfx/casting-grunt-start-0.22s-103204.mp3",
+      "role": "One-shot angler exertion sound triggered simultaneously with the rod whoosh",
+      "loop": false,
+      "defaultVolume": 0.9,
+      "derivedFrom": "sfx/casting-grunt-103204.mp3",
+      "trimmedFromStartSeconds": 0.22,
+      "sha256": "2cf82fe5907660373609fd792db164adb4f09f15c4e3a70554f2a8efcebca33e"
+    },
+    {
+      "id": "fish-hook-splash-loop",
+      "file": "sfx/fish-jumping-splash-2-start-0.86s-96871.mp3",
+      "role": "Looping fish splash sound spanning bite and hooked gameplay states",
+      "loop": true,
+      "defaultVolume": 0.8,
+      "states": ["bite", "hooked"],
+      "derivedFrom": "sfx/fish-jumping-splash-2-96871.mp3",
+      "trimmedFromStartSeconds": 0.86,
+      "sha256": "7e803d8971f62e53237807270f26df761355328d35313abb5bca2abbdf1a5243"
+    },
+    {
+      "id": "fishing-reel-loop",
+      "file": "sfx/fishing-reel-302355.mp3",
+      "role": "Fishing reel sound that starts with the hooked state and stops when landing or losing the fish",
+      "loop": true,
+      "defaultVolume": 0.72,
+      "states": ["hooked"],
+      "sha256": "b9e2d6fd661f695a9535c3309da5ca7fe3dba289a01985173b85bda8d223354f"
+    },
+    {
+      "id": "landing-congratulations",
+      "file": "sfx/landing-congratulations-trimmed-334724.mp3",
+      "role": "First non-looping cue in the landed-fish transition sequence",
+      "loop": false,
+      "defaultVolume": 0.78,
+      "states": ["impact"],
+      "derivedFrom": "sfx/landing-congratulations-source-334724.mp3",
+      "trimmedRangeSeconds": [0.05, 1.24],
+      "sha256": "50cc7090ef2288e1f3ad51545732234e832af6f75e05a9d116ed7bfd4ff6237c"
+    },
+    {
+      "id": "landing-victory",
+      "file": "sfx/landing-yeah-trimmed-7106.mp3",
+      "role": "Second non-looping yeah cue started with the catch-reveal splash",
+      "loop": false,
+      "defaultVolume": 0.78,
+      "states": ["impact", "result"],
+      "derivedFrom": "sfx/landing-yeah-source-7106.mp3",
+      "trimmedRangeSeconds": [0.072, 3.02],
+      "sha256": "e0fdbb43ad2edde07053b42bab8d175cf747a6ebe464fdedba9f54d87b76cb6a"
+    },
+    {
+      "id": "landing-water-splash",
+      "file": "sfx/landing-water-splash-start-0.13s-352021.mp3",
+      "role": "Loud non-looping splash started with the second landing cue at the catch reveal",
+      "loop": false,
+      "defaultVolume": 1.0,
+      "states": ["impact"],
+      "derivedFrom": "sfx/landing-water-splash-source-352021.mp3",
+      "trimmedFromStartSeconds": 0.13,
+      "sha256": "b00fe5418fa0a50fe1d8cae31cd575a7c07037834c34f9dca6c4b0067dbf8193"
+    },
+    {
+      "id": "landing-oh-yeah",
+      "file": "sfx/landing-oh-yeah-trimmed-407752.mp3",
+      "role": "Third non-looping cue started by the preceding yeah cue's ended event",
+      "loop": false,
+      "defaultVolume": 0.78,
+      "states": ["impact", "result"],
+      "derivedFrom": "sfx/landing-oh-yeah-source-407752.mp3",
+      "trimmedRangeSeconds": [0.032, 1.35],
+      "sha256": "6c775e9a10bcd37abd757be288c76abe139cd7cf847aeaa917d7093b2e764df2"
+    },
+    {
+      "id": "gentle-rain-ambience",
+      "file": "ambience/gentle-rain-07-437321.mp3",
+      "role": "Fishing-scene weather extension: quiet for rain and louder beneath thunder for storm",
+      "loop": true,
+      "weatherVolumes": {"rain": 0.4, "storm": 0.7},
+      "sha256": "4bbeffc74f48dc64312937451b04081b693602ba5fa53d5607eb986b282ee33f"
+    },
+    {
+      "id": "thunderstorm-ambience",
+      "file": "ambience/thunderstorm-14708.mp3",
+      "role": "Fishing-scene thunder layer used only for storm weather",
+      "loop": true,
+      "weatherVolumes": {"storm": 0.9},
+      "sha256": "54b495216446e60fe3aa7e61da0116ebe9723d926faa3bf5ae12c708d28f56bd"
+    }
+  ]
+}
