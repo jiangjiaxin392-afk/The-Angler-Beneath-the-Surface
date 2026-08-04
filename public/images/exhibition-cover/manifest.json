@@ -1,0 +1,12 @@
+{
+  "revision": "20260803-exhibition-v1",
+  "cover": "cover-v1.png",
+  "nativeSize": {
+    "width": 1672,
+    "height": 941
+  },
+  "startButtonFrames": {
+    "default": "../result-ui-v3/components/decision-keep-default.png",
+    "hover": "../result-ui-v3/components/decision-keep-hover.png"
+  }
+}

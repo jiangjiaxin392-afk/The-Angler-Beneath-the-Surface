@@ -1,0 +1,12 @@
+{
+  "version": "20260804-v2",
+  "subject": "clearly juvenile yellow perch",
+  "style": "hand-inked pixel comic",
+  "runtimeAssets": {
+    "juvenile-perch.png": ["catch archive"],
+    "juvenile-perch-hands.png": ["catch result", "legacy catch image slot"],
+    "juvenile-perch-target.png": ["living-room target fish"],
+    "juvenile-perch-shadow.png": ["television target shadow"]
+  },
+  "sourcePolicy": "Versioned source and transparent runtime files are kept together; no earlier project asset was overwritten."
+}

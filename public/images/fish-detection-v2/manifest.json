@@ -1,0 +1,38 @@
+{
+  "revision": "20260803-painted-v2",
+  "frameCount": 8,
+  "fish": {
+    "canvas": [768, 416],
+    "anchor": [0.5, 0.5],
+    "files": [
+      "fish/frame-00.png",
+      "fish/frame-01.png",
+      "fish/frame-02.png",
+      "fish/frame-03.png",
+      "fish/frame-04.png",
+      "fish/frame-05.png",
+      "fish/frame-06.png",
+      "fish/frame-07.png"
+    ]
+  },
+  "water": {
+    "canvas": [512, 512],
+    "anchor": [0.5, 0.5],
+    "files": [
+      "water/frame-00.png",
+      "water/frame-01.png",
+      "water/frame-02.png",
+      "water/frame-03.png",
+      "water/frame-04.png",
+      "water/frame-05.png",
+      "water/frame-06.png",
+      "water/frame-07.png"
+    ]
+  },
+  "states": {
+    "waiting": [0, 1, 2, 3],
+    "bite": [4, 5, 6, 7],
+    "hooked": [7]
+  },
+  "notes": "Fish and water effects are independent transparent frames. Existing legacy assets remain untouched."
+}

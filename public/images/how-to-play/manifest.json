@@ -1,0 +1,14 @@
+{
+  "revision": "20260803-how-to-v3",
+  "pages": [
+    "page-01-idea-v3.png",
+    "page-02-water-v3.png",
+    "page-03-tackle-v3.png",
+    "page-04-weather-v3.png",
+    "page-05-catch-v3.png"
+  ],
+  "sourceSize": "1792x1024",
+  "purpose": "Five-page exhibition guide covering the AI fishing metaphor, answer approaches, prompt conditions, weather difficulty and catch judgement.",
+  "textPolicy": "Generated backgrounds contain no readable copy. Clear English-only captions are rendered separately in sketch.js.",
+  "visualPolicy": "Loose human sketchbook linework with visible corrections, uneven pressure, restrained teal and magenta accents, broad paper areas and no decorative clutter."
+}
