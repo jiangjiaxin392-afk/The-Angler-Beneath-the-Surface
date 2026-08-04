@@ -1,13 +1,14 @@
 "use strict";
 
 const crypto = require("node:crypto");
+const { emergencyAnswer } = require("../public/js/emergency-answer.js");
 
 const retryLimits = Object.freeze({
   "invalid-json": 3,
   "no-readable-output": 3,
   "provider-refusal": 3,
   "quality-rejected": 3,
-  "timeout": 2,
+  "timeout": 1,
   "upstream-rate-limited": 2,
   "upstream-service": 2,
   "upstream-http": 2,
@@ -22,26 +23,6 @@ function failureCode(error) {
 
 function retryLimit(error) {
   return retryLimits[failureCode(error)] || 2;
-}
-
-function emergencyAnswer(question, catchId) {
-  const usesChinese = /[\u3400-\u9fff]/u.test(String(question || ""));
-  const answers = usesChinese
-    ? {
-        default: "AI 信号中断，未能生成答案。请再次抛投重试。",
-        boot: "服务未能生成当前答案，因此这次结果无法验证。",
-        perch: "信号中断",
-        rubbish: "信号来了——等等，不对；先是碎片，又回到开头，最后仍没有结论。",
-        weeds: "信号刚碰到问题就偏离了方向，最后没有回到可用答案。"
-      }
-    : {
-        default: "The AI signal dropped before an answer arrived. Cast again to retry.",
-        boot: "The service could not produce a current answer, so this result cannot be verified.",
-        perch: "Signal lost",
-        rubbish: "The signal arrived—wait, no; fragments first, back to the start, then nothing conclusive.",
-        weeds: "The signal touched the question, drifted away, and never returned to a usable answer."
-      };
-  return answers[catchId] || answers.default;
 }
 
 function buildEmergencyGeneration({ question, catchId, requestId, revision, detailLevel, error, attempts }) {

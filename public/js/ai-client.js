@@ -7,8 +7,9 @@
 })(typeof window !== "undefined" ? window : null, function createServerAiModule() {
   "use strict";
 
-  const CLIENT_REVISION = "20260804-server-v3";
-  const DEFAULT_TIMEOUT_MS = 125_000;
+  const CLIENT_REVISION = "20260805-server-v4";
+  const DEFAULT_RECOMMENDATION_TIMEOUT_MS = 30_000;
+  const DEFAULT_GENERATION_TIMEOUT_MS = 6_000;
 
   function createAiError(message, code, details = {}) {
     const error = new Error(message);
@@ -78,10 +79,20 @@
 
   function createAiClient(globalObject, options = {}) {
     const activeRequests = new Set();
-    const timeoutMs = Number.isFinite(options.timeoutMs) ? Math.max(1, options.timeoutMs) : DEFAULT_TIMEOUT_MS;
+    const sharedTimeoutMs = Number.isFinite(options.timeoutMs) ? Math.max(1, options.timeoutMs) : null;
+    const recommendationTimeoutMs = sharedTimeoutMs || (
+      Number.isFinite(options.recommendationTimeoutMs)
+        ? Math.max(1, options.recommendationTimeoutMs)
+        : DEFAULT_RECOMMENDATION_TIMEOUT_MS
+    );
+    const generationTimeoutMs = sharedTimeoutMs || (
+      Number.isFinite(options.generationTimeoutMs)
+        ? Math.max(1, options.generationTimeoutMs)
+        : DEFAULT_GENERATION_TIMEOUT_MS
+    );
     let requestGeneration = 0;
 
-    async function postJson(path, payload, validate) {
+    async function postJson(path, payload, validate, timeoutMs) {
       const controller = new globalObject.AbortController();
       const request = {
         controller,
@@ -142,10 +153,10 @@
       mode: "server",
       revision: CLIENT_REVISION,
       recommend(payload) {
-        return postJson("/api/ai/recommend", payload, validateRecommendation);
+        return postJson("/api/ai/recommend", payload, validateRecommendation, recommendationTimeoutMs);
       },
       generate(payload) {
-        return postJson("/api/ai/generate", payload, validateGeneration);
+        return postJson("/api/ai/generate", payload, validateGeneration, generationTimeoutMs);
       },
       cancelAll
     });

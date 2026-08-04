@@ -67,7 +67,7 @@ test("status exposes the running server revision", async () => {
   assert.equal(response.status, 200);
   const status = await response.json();
   assert.equal(status.provider, "openai");
-  assert.equal(status.serverRevision, "20260804-server-v9");
+  assert.equal(status.serverRevision, "20260805-server-v10");
   assert.equal(typeof status.configured, "boolean");
 });
 
@@ -116,7 +116,7 @@ test("a provider outage returns a playable fallback instead of a dead cast", asy
   assert.equal(response.status, 200);
   const result = await response.json();
   assert.equal(result.source, "fallback");
-  assert.equal(result.answer, "信号中断");
+  assert.equal(result.answer, "大本钟");
   assert.equal(result.failureCode, "not-configured");
 });
 

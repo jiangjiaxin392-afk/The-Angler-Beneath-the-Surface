@@ -7,13 +7,13 @@ const aiResilience = require("./server/ai-resilience.js");
 
 const port = Number(process.env.PORT) || 3001;
 const listenHost = String(process.env.ANGLER_HOST || "127.0.0.1").trim();
-const serverRevision = "20260804-server-v9";
+const serverRevision = "20260805-server-v10";
 const projectRoot = __dirname;
 const publicRoot = path.join(projectRoot, "public");
 const publicEntryFiles = new Set(["index.html", "sketch.js", "style.css"]);
 const openAiApiKey = String(process.env.OPENAI_API_KEY || "").trim();
 const defaultModel = String(process.env.OPENAI_MODEL || "gpt-5.6-terra").trim();
-const apiTimeoutMs = 55_000;
+const apiTimeoutMs = 30_000;
 const maxJsonBodyBytes = 64 * 1024;
 const requestWindowMs = 60_000;
 const maxRequestsPerWindow = 24;
@@ -544,6 +544,7 @@ async function handleGeneration(request, response, body) {
   if (!isAllowed(waterId, waterIds) || !isAllowed(tackleId, tackleIds) || !isAllowed(catchId, catchIds)) {
     return sendJson(response, 400, { error: "The selected location, tackle or catch type is invalid." });
   }
+  const generationStartedAt = Date.now();
 
   const safeInput = {
     question,
@@ -577,7 +578,7 @@ async function handleGeneration(request, response, body) {
       result = await requestOpenAi({
         request,
         waterId,
-        maxOutputTokens: catchId === "carp" ? 2200 : catchId === "perch" ? 120 : 1500,
+        maxOutputTokens: catchId === "carp" ? 2200 : catchId === "perch" ? 700 : 1500,
         schema: catchSchema,
         schemaName: "angler_catch",
         instructions: [
@@ -612,9 +613,10 @@ async function handleGeneration(request, response, body) {
       error: lastError,
       attempts
     });
-    console.error(`[AI fallback] code=${fallback.failureCode} attempts=${attempts}`);
+    console.error(`[AI fallback] catch=${catchId} code=${fallback.failureCode} attempts=${attempts} durationMs=${Date.now() - generationStartedAt}`);
     return sendJson(response, 200, fallback);
   }
+  console.log(`[AI generation] catch=${catchId} source=openai attempts=${attempts} durationMs=${Date.now() - generationStartedAt}`);
   const fingerprint = crypto.createHash("sha256").update(answer).digest("hex").slice(0, 20);
   sendJson(response, 200, {
     source: "openai",

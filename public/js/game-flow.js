@@ -78,6 +78,10 @@
       && answer.trim().length > 0;
   }
 
+  function shouldBeginBite(activeTime, biteAt) {
+    return Number.isFinite(activeTime) && Number.isFinite(biteAt) && activeTime > biteAt;
+  }
+
   function getStateIntegrityPlan(snapshot = {}) {
     const catchIds = Array.isArray(snapshot.validCatchIds) ? snapshot.validCatchIds : [];
     const tackleIds = Array.isArray(snapshot.validTackleIds) ? snapshot.validTackleIds : [];
@@ -191,7 +195,8 @@
     getHomePathname,
     getStateIntegrityPlan,
     getTransitionPlan,
-    isPlayableGeneratedAnswer
+    isPlayableGeneratedAnswer,
+    shouldBeginBite
   });
 
   root.AnglerGameFlow = api;

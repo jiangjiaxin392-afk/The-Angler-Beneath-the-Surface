@@ -70,6 +70,14 @@ test("a timed-out request is aborted and classified as timeout", async () => {
   );
 });
 
+test("generation has its own short exhibition deadline", async () => {
+  const runtime = createRuntime((_path, options) => new Promise((_resolve, reject) => {
+    options.signal.addEventListener("abort", () => reject(Object.assign(new Error("aborted"), { name: "AbortError" })));
+  }));
+  const client = createAiClient(runtime, { recommendationTimeoutMs: 100, generationTimeoutMs: 5 });
+  await assert.rejects(client.generate({}), (error) => error.code === "timeout");
+});
+
 test("cancelAll classifies cancellation separately from timeout", async () => {
   const runtime = createRuntime((_path, options) => new Promise((_resolve, reject) => {
     options.signal.addEventListener("abort", () => reject(Object.assign(new Error("aborted"), { name: "AbortError" })));

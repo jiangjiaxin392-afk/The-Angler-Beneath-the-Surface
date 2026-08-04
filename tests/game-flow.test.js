@@ -82,6 +82,11 @@ test("both OpenAI and offline fallback answers can trigger a bite", () => {
   assert.equal(flow.isPlayableGeneratedAnswer("fallback", "   "), false);
 });
 
+test("bite timing is controlled by weather instead of AI completion", () => {
+  assert.equal(flow.shouldBeginBite(4.1, 4), true);
+  assert.equal(flow.shouldBeginBite(3.9, 4), false);
+});
+
 test("unknown game states recover to the cover", () => {
   const plan = flow.getStateIntegrityPlan({ state: "blankTelevision" });
   assert.equal(plan.state, "cover");

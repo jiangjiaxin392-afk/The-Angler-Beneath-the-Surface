@@ -8,8 +8,8 @@ test("invalid structured output receives three bounded attempts", () => {
   assert.equal(resilience.retryLimit({ failureCode: "no-readable-output" }), 3);
 });
 
-test("timeouts remain inside the browser request window", () => {
-  assert.equal(resilience.retryLimit({ failureCode: "timeout" }), 2);
+test("a provider timeout falls back without a second long wait", () => {
+  assert.equal(resilience.retryLimit({ failureCode: "timeout" }), 1);
 });
 
 test("missing configuration falls back immediately", () => {
@@ -27,9 +27,11 @@ test("Chinese perch fallback stays ultra-short and playable", () => {
     attempts: 3
   });
   assert.equal(result.source, "fallback");
-  assert.equal(result.answer, "信号中断");
+  assert.equal(result.answer, "大本钟");
   assert.equal(result.failureCode, "invalid-json");
   assert.equal(result.attempts, 3);
+  assert.equal(resilience.emergencyAnswer("为什么低矿物质的水更好喝？", "perch"), "低矿物质");
+  assert.equal(resilience.emergencyAnswer("宇宙战4-5费启动完全防不住", "perch"), "优先拆启动核心");
 });
 
 test("fallback answers remain distinct for rubbish and weeds", () => {
