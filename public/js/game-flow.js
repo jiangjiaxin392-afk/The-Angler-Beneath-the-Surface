@@ -48,6 +48,7 @@
   ]);
 
   const CATCH_REQUIRED_STATES = Object.freeze(["impact", "awaitingAnswer", "result"]);
+  const PLAYABLE_ANSWER_STATUSES = Object.freeze(["openai", "fallback"]);
 
   function isIn(groupName, state) {
     return STATE_GROUPS[groupName].includes(state);
@@ -69,6 +70,12 @@
 
   function isValidIndex(index, count) {
     return Number.isInteger(index) && index >= 0 && index < count;
+  }
+
+  function isPlayableGeneratedAnswer(status, answer) {
+    return PLAYABLE_ANSWER_STATUSES.includes(String(status || ""))
+      && typeof answer === "string"
+      && answer.trim().length > 0;
   }
 
   function getStateIntegrityPlan(snapshot = {}) {
@@ -178,11 +185,13 @@
     CUTSCENE_TARGETS,
     FLOW_TARGETS,
     HOME_BUTTON_STATES,
+    PLAYABLE_ANSWER_STATUSES,
     getSkipTarget,
     getWaterSelectionReturnState,
     getHomePathname,
     getStateIntegrityPlan,
-    getTransitionPlan
+    getTransitionPlan,
+    isPlayableGeneratedAnswer
   });
 
   root.AnglerGameFlow = api;

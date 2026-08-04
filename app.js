@@ -3,10 +3,11 @@ const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
 const catchAnswerShaper = require("./public/js/catch-answer-shaper.js");
+const aiResilience = require("./server/ai-resilience.js");
 
 const port = Number(process.env.PORT) || 3001;
 const listenHost = String(process.env.ANGLER_HOST || "127.0.0.1").trim();
-const serverRevision = "20260804-server-v8";
+const serverRevision = "20260804-server-v9";
 const projectRoot = __dirname;
 const publicRoot = path.join(projectRoot, "public");
 const publicEntryFiles = new Set(["index.html", "sketch.js", "style.css"]);
@@ -139,16 +140,27 @@ function responseText(apiResponse) {
   for (const item of apiResponse.output || []) {
     if (item.type !== "message") continue;
     for (const content of item.content || []) {
-      if (content.type === "refusal") throw new Error("The model declined this request.");
+      if (content.type === "refusal") {
+        throw Object.assign(new Error("The model declined this request."), {
+          failureCode: "provider-refusal",
+          statusCode: 502
+        });
+      }
       if (content.type === "output_text" && typeof content.text === "string") return content.text;
     }
   }
-  throw new Error("OpenAI returned no readable answer.");
+  throw Object.assign(new Error("OpenAI returned no readable answer."), {
+    failureCode: "no-readable-output",
+    statusCode: 502
+  });
 }
 
 async function requestOpenAi({ request, instructions, input, schema, schemaName, waterId, maxOutputTokens }) {
   if (!openAiApiKey) {
-    throw Object.assign(new Error("OPENAI_API_KEY is not configured on the server."), { statusCode: 503 });
+    throw Object.assign(new Error("OPENAI_API_KEY is not configured on the server."), {
+      failureCode: "not-configured",
+      statusCode: 503
+    });
   }
 
   const modelByWater = {
@@ -191,15 +203,42 @@ async function requestOpenAi({ request, instructions, input, schema, schemaName,
     if (!apiResponse.ok) {
       const message = cleanText(data?.error?.message || `OpenAI request failed (${apiResponse.status}).`, 300);
       const error = new Error(message);
-      error.statusCode = apiResponse.status === 429 ? 429 : 502;
+      error.failureCode = apiResponse.status === 429
+        ? "upstream-rate-limited"
+        : [401, 403].includes(apiResponse.status)
+          ? "upstream-auth"
+          : apiResponse.status >= 500
+            ? "upstream-service"
+            : "upstream-http";
+      error.statusCode = apiResponse.status === 429 ? 429 : [401, 403].includes(apiResponse.status) ? 503 : 502;
+      const retryAfter = Number(apiResponse.headers.get("retry-after"));
+      if (Number.isFinite(retryAfter) && retryAfter >= 0) error.retryAfterMs = retryAfter * 1000;
       error.openAiRequestId = apiResponse.headers.get("x-request-id") || null;
       throw error;
     }
-    const parsed = JSON.parse(responseText(data));
+    const rawText = responseText(data);
+    let parsed;
+    try {
+      parsed = JSON.parse(rawText);
+    } catch {
+      throw Object.assign(new Error("OpenAI returned invalid structured output."), {
+        failureCode: "invalid-json",
+        statusCode: 502
+      });
+    }
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      throw Object.assign(new Error("OpenAI returned invalid structured output."), {
+        failureCode: "invalid-json",
+        statusCode: 502
+      });
+    }
     return { parsed, model, openAiResponseId: data.id || null };
   } catch (error) {
     if (error.name === "AbortError") {
-      throw Object.assign(new Error("OpenAI request timed out."), { statusCode: 504 });
+      throw Object.assign(new Error("OpenAI request timed out."), {
+        failureCode: "timeout",
+        statusCode: 504
+      });
     }
     throw error;
   } finally {
@@ -489,8 +528,10 @@ function validateGeneratedAnswer(answer, lengthGuidance, question, catchId) {
   return null;
 }
 
-function waitBeforeRetry(attempt) {
-  return new Promise((resolve) => setTimeout(resolve, 350 + attempt * 250));
+function waitBeforeRetry(attempt, error) {
+  const backoffMs = 450 + attempt * 450;
+  const requestedDelay = Number(error?.retryAfterMs) || 0;
+  return new Promise((resolve) => setTimeout(resolve, Math.min(5_000, Math.max(backoffMs, requestedDelay))));
 }
 
 async function handleGeneration(request, response, body) {
@@ -529,7 +570,9 @@ async function handleGeneration(request, response, body) {
   let result = null;
   let answer = "";
   let lastError = null;
-  for (let attempt = 0; attempt < 2; attempt += 1) {
+  let attempts = 0;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    attempts = attempt + 1;
     try {
       result = await requestOpenAi({
         request,
@@ -547,15 +590,31 @@ async function handleGeneration(request, response, body) {
       answer = catchAnswerShaper.shapeAnswer(answer, catchId);
       const qualityProblem = validateGeneratedAnswer(answer, lengthGuidance, question, catchId);
       if (!qualityProblem) break;
-      lastError = Object.assign(new Error(qualityProblem), { statusCode: 502 });
+      lastError = Object.assign(new Error(qualityProblem), {
+        failureCode: "quality-rejected",
+        statusCode: 502
+      });
       result = null;
     } catch (error) {
       lastError = error;
       result = null;
     }
-    if (attempt === 0) await waitBeforeRetry(attempt);
+    if (attempt + 1 >= aiResilience.retryLimit(lastError)) break;
+    await waitBeforeRetry(attempt, lastError);
   }
-  if (!result) throw lastError || Object.assign(new Error("No usable AI answer was generated."), { statusCode: 502 });
+  if (!result) {
+    const fallback = aiResilience.buildEmergencyGeneration({
+      question,
+      catchId,
+      requestId,
+      revision: catchAnswerShaper.CURRENT_REVISION,
+      detailLevel: lengthGuidance.level,
+      error: lastError,
+      attempts
+    });
+    console.error(`[AI fallback] code=${fallback.failureCode} attempts=${attempts}`);
+    return sendJson(response, 200, fallback);
+  }
   const fingerprint = crypto.createHash("sha256").update(answer).digest("hex").slice(0, 20);
   sendJson(response, 200, {
     source: "openai",
@@ -605,13 +664,13 @@ async function handleApi(request, response, requestPath) {
     else await handleGeneration(request, response, body);
   } catch (error) {
     const status = Number(error.statusCode) || 500;
-    const category = status === 429
+    const category = error.failureCode || (status === 429
       ? "rate-limited"
       : status === 504
         ? "timeout"
         : status >= 500
           ? "service-unavailable"
-          : "invalid-request";
+          : "invalid-request");
     // Do not log the error message: an upstream provider can include fragments
     // of a visitor's input in it. Request IDs are sufficient for diagnostics.
     console.error(`[AI ${status}] ${category}${error.openAiRequestId ? ` request=${error.openAiRequestId}` : ""}`);

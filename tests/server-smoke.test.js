@@ -42,7 +42,7 @@ before(async () => {
     ["--env-file-if-exists=.env", "app.js"],
     {
       cwd: projectRoot,
-      env: { ...process.env, PORT: String(port), ANGLER_HOST: "127.0.0.1" },
+      env: { ...process.env, OPENAI_API_KEY: "", PORT: String(port), ANGLER_HOST: "127.0.0.1" },
       stdio: ["ignore", "pipe", "pipe"],
       windowsHide: true
     }
@@ -67,7 +67,7 @@ test("status exposes the running server revision", async () => {
   assert.equal(response.status, 200);
   const status = await response.json();
   assert.equal(status.provider, "openai");
-  assert.equal(status.serverRevision, "20260804-server-v8");
+  assert.equal(status.serverRevision, "20260804-server-v9");
   assert.equal(typeof status.configured, "boolean");
 });
 
@@ -101,11 +101,35 @@ test("encoded traversal cannot expose project files", async () => {
   assert.equal(response.status, 404);
 });
 
+test("a provider outage returns a playable fallback instead of a dead cast", async () => {
+  const response = await fetch(`${baseUrl}/api/ai/generate`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      requestId: "smoke-fallback",
+      question: "伦敦哪里好玩？",
+      modelSelection: { waterId: "daylight-river" },
+      promptConfiguration: { tackleId: "quick", weight: "LIGHT" },
+      answerShape: { catchId: "perch" }
+    })
+  });
+  assert.equal(response.status, 200);
+  const result = await response.json();
+  assert.equal(result.source, "fallback");
+  assert.equal(result.answer, "信号中断");
+  assert.equal(result.failureCode, "not-configured");
+});
+
 test("AI routes enforce the per-client request window", async () => {
-  for (let index = 0; index < 24; index += 1) {
+  let limitedResponse = null;
+  for (let index = 0; index < 25; index += 1) {
     const response = await fetch(`${baseUrl}/api/ai/generate`, { method: "POST" });
+    if (response.status === 429) {
+      limitedResponse = response;
+      break;
+    }
     assert.equal(response.status, 415);
   }
-  const limitedResponse = await fetch(`${baseUrl}/api/ai/generate`, { method: "POST" });
+  assert.ok(limitedResponse);
   assert.equal(limitedResponse.status, 429);
 });

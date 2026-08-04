@@ -2090,11 +2090,12 @@ function applyPreviewState() {
     game.currentCatch = CATCHES.find((item) => item.id === requestedId) || CATCHES[0];
     const previewAnswer = parameters.get("answer");
     if (previewAnswer) {
+      const previewSource = parameters.get("source") === "fallback" ? "fallback" : "openai";
       game.currentCatch = {
         ...game.currentCatch,
         candidate: previewAnswer.slice(0, 12_000),
         requiresGeneration: false,
-        aiStatus: "openai"
+        aiStatus: previewSource
       };
     }
     game.result = ["weeds", "rubbish", "boot"].includes(game.currentCatch.id) ? "weeds" : "fish";
@@ -6142,12 +6143,10 @@ function finishLandingTransition() {
 }
 
 function isCastAnswerReady(castRecord) {
-  return Boolean(
-    castRecord
-    && castRecord.aiStatus === "openai"
-    && typeof castRecord.answer === "string"
-    && castRecord.answer.trim().length > 0
-  );
+  return Boolean(castRecord && window.AnglerGameFlow.isPlayableGeneratedAnswer(
+    castRecord.aiStatus,
+    castRecord.answer
+  ));
 }
 
 function chooseCastVariationAngle() {

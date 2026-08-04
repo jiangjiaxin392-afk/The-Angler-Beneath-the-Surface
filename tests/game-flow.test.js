@@ -75,6 +75,13 @@ test("charging to flying stops charge sound but keeps scene music", () => {
   assert.equal(plan.startFishingMusic, true);
 });
 
+test("both OpenAI and offline fallback answers can trigger a bite", () => {
+  assert.equal(flow.isPlayableGeneratedAnswer("openai", "Live answer"), true);
+  assert.equal(flow.isPlayableGeneratedAnswer("fallback", "Signal lost"), true);
+  assert.equal(flow.isPlayableGeneratedAnswer("ai-error", "Signal lost"), false);
+  assert.equal(flow.isPlayableGeneratedAnswer("fallback", "   "), false);
+});
+
 test("unknown game states recover to the cover", () => {
   const plan = flow.getStateIntegrityPlan({ state: "blankTelevision" });
   assert.equal(plan.state, "cover");
