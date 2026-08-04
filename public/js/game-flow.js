@@ -78,8 +78,11 @@
       && answer.trim().length > 0;
   }
 
-  function shouldBeginBite(activeTime, biteAt) {
-    return Number.isFinite(activeTime) && Number.isFinite(biteAt) && activeTime > biteAt;
+  function shouldBeginBite(activeTime, biteAt, answerStatus, answer) {
+    return Number.isFinite(activeTime)
+      && Number.isFinite(biteAt)
+      && activeTime > biteAt
+      && isPlayableGeneratedAnswer(answerStatus, answer);
   }
 
   function getStateIntegrityPlan(snapshot = {}) {

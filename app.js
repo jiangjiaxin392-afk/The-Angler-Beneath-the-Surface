@@ -7,12 +7,15 @@ const aiResilience = require("./server/ai-resilience.js");
 
 const port = Number(process.env.PORT) || 3001;
 const listenHost = String(process.env.ANGLER_HOST || "127.0.0.1").trim();
-const serverRevision = "20260805-server-v11";
+const serverRevision = "20260805-server-v12";
 const projectRoot = __dirname;
 const publicRoot = path.join(projectRoot, "public");
 const publicEntryFiles = new Set(["index.html", "sketch.js", "style.css"]);
 const openAiApiKey = String(process.env.OPENAI_API_KEY || "").trim();
 const defaultModel = String(process.env.OPENAI_MODEL || "gpt-5.6-terra").trim();
+const allowedReasoningEfforts = new Set(["none", "low", "medium", "high", "xhigh", "max"]);
+const requestedReasoningEffort = String(process.env.OPENAI_REASONING_EFFORT || "low").trim().toLowerCase();
+const reasoningEffort = allowedReasoningEfforts.has(requestedReasoningEffort) ? requestedReasoningEffort : "low";
 const apiTimeoutMs = 30_000;
 const maxJsonBodyBytes = 64 * 1024;
 const requestWindowMs = 60_000;
@@ -171,6 +174,7 @@ async function requestOpenAi({ request, instructions, input, schema, schemaName,
   const model = cleanText(modelByWater[waterId] || defaultModel, 80);
   const payload = {
     model,
+    reasoning: { effort: reasoningEffort },
     instructions,
     input,
     max_output_tokens: maxOutputTokens,
@@ -646,6 +650,7 @@ async function handleApi(request, response, requestPath) {
       provider: "openai",
       configured: Boolean(openAiApiKey),
       model: defaultModel,
+      reasoningEffort,
       serverRevision
     });
   }
@@ -749,6 +754,6 @@ server.on("error", (error) => {
 
 server.listen(port, listenHost, () => {
   console.log(`The Angler ${serverRevision} is running at http://localhost:${port}`);
-  console.log(`AI provider: OpenAI (${defaultModel}); configured: ${Boolean(openAiApiKey)}`);
+  console.log(`AI provider: OpenAI (${defaultModel}, reasoning=${reasoningEffort}); configured: ${Boolean(openAiApiKey)}`);
   console.log("Press Ctrl + C to stop the server.");
 });

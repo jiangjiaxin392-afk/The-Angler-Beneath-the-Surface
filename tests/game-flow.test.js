@@ -82,9 +82,11 @@ test("only a live OpenAI answer can produce a catch", () => {
   assert.equal(flow.isPlayableGeneratedAnswer("openai", "   "), false);
 });
 
-test("bite timing is controlled by weather instead of AI completion", () => {
-  assert.equal(flow.shouldBeginBite(4.1, 4), true);
-  assert.equal(flow.shouldBeginBite(3.9, 4), false);
+test("a bite waits for both weather timing and a live answer", () => {
+  assert.equal(flow.shouldBeginBite(4.1, 4, "openai", "Ready"), true);
+  assert.equal(flow.shouldBeginBite(3.9, 4, "openai", "Ready"), false);
+  assert.equal(flow.shouldBeginBite(4.1, 4, "ai-pending", null), false);
+  assert.equal(flow.shouldBeginBite(4.1, 4, "fallback", "Local answer"), false);
 });
 
 test("unknown game states recover to the cover", () => {

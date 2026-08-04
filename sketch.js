@@ -2577,7 +2577,12 @@ function updateGame(dt) {
 
     const activeTime = elapsed / 1000 + game.retrieve * 1.8;
     if (game.currentCast?.aiStatus === "ai-error") finishRun("signal");
-    else if (window.AnglerGameFlow.shouldBeginBite(activeTime, game.biteAt)) beginBite();
+    else if (window.AnglerGameFlow.shouldBeginBite(
+      activeTime,
+      game.biteAt,
+      game.currentCast?.aiStatus,
+      game.currentCast?.answer
+    )) beginBite();
     else if (game.retrieve >= 0.985) finishRun("empty");
   }
 
@@ -5996,9 +6001,8 @@ function castLine() {
   const safeCast = clampLureForFish(aimX, game.castTarget.y);
   game.castTarget.x = safeCast.x;
   game.castTarget.y = safeCast.y;
-  if (!game.currentCast || game.currentCast.status !== "prepared") {
-    prepareNextCastAnswer();
-  }
+  game.currentCast = createCastRecord();
+  requestAiCatch(game.currentCast);
   game.retrieve = 0;
   game.shake = 2;
   setState("flying");
@@ -6340,12 +6344,6 @@ function prepareCast(incrementRun = true) {
   game.observation.y = 650;
   if (incrementRun) game.runNumber += 1;
   setState("ready");
-  prepareNextCastAnswer();
-}
-
-function prepareNextCastAnswer() {
-  game.currentCast = createCastRecord();
-  requestAiCatch(game.currentCast);
 }
 
 function resetCast() {
