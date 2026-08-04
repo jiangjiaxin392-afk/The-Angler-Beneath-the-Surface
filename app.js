@@ -7,7 +7,7 @@ const aiResilience = require("./server/ai-resilience.js");
 
 const port = Number(process.env.PORT) || 3001;
 const listenHost = String(process.env.ANGLER_HOST || "127.0.0.1").trim();
-const serverRevision = "20260805-server-v12";
+const serverRevision = "20260805-server-v13";
 const projectRoot = __dirname;
 const publicRoot = path.join(projectRoot, "public");
 const publicEntryFiles = new Set(["index.html", "sketch.js", "style.css"]);
@@ -578,6 +578,7 @@ async function handleGeneration(request, response, body) {
   let attempts = 0;
   for (let attempt = 0; attempt < 3; attempt += 1) {
     attempts = attempt + 1;
+    const attemptStartedAt = Date.now();
     try {
       result = await requestOpenAi({
         request,
@@ -594,7 +595,10 @@ async function handleGeneration(request, response, body) {
       answer = cleanText(result.parsed.answer, 12_000);
       answer = catchAnswerShaper.shapeAnswer(answer, catchId);
       const qualityProblem = validateGeneratedAnswer(answer, lengthGuidance, question, catchId);
-      if (!qualityProblem) break;
+      if (!qualityProblem) {
+        console.log(`[AI attempt] catch=${catchId} water=${waterId} attempt=${attempts} result=accepted durationMs=${Date.now() - attemptStartedAt}`);
+        break;
+      }
       lastError = Object.assign(new Error(qualityProblem), {
         failureCode: "quality-rejected",
         statusCode: 502
@@ -604,6 +608,7 @@ async function handleGeneration(request, response, body) {
       lastError = error;
       result = null;
     }
+    console.warn(`[AI attempt] catch=${catchId} water=${waterId} attempt=${attempts} result=rejected code=${aiResilience.failureCode(lastError)} durationMs=${Date.now() - attemptStartedAt}`);
     if (attempt + 1 >= aiResilience.retryLimit(lastError)) break;
     await waitBeforeRetry(attempt, lastError);
   }
@@ -639,7 +644,8 @@ async function handleGeneration(request, response, body) {
     answerFingerprint: fingerprint,
     answerDetailLevel: lengthGuidance.level,
     model: result.model,
-    responseId: result.openAiResponseId
+    responseId: result.openAiResponseId,
+    attempts
   });
 }
 
