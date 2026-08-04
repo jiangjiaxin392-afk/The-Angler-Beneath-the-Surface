@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>The Angler: Beneath the Surface?</title>
   <link rel="icon" href="data:," />
-  <link rel="stylesheet" href="style.css?v=20260730n" />
+  <link rel="stylesheet" href="style.css?v=20260803-exhibition-v1" />
   <script src="public/vendor/p5.min.js"></script>
 </head>
 <body>
@@ -15,10 +15,156 @@
       <strong>TUNING THE SIGNAL</strong>
       <span>LOADING THE WATER...</span>
     </div>
+    <textarea
+      id="questionInput"
+      class="canvas-text-input"
+      maxlength="400"
+      autocomplete="off"
+      autocapitalize="sentences"
+      spellcheck="true"
+      aria-label="What are you fishing for? Enter your question"
+    ></textarea>
+    <audio
+      id="coverJourneyMusic"
+      src="public/audio/music/ahedarexia-blue-g-172788.mp3"
+      preload="auto"
+      loop
+      aria-hidden="true"
+    ></audio>
+    <audio
+      id="beerOpeningSound"
+      src="public/audio/sfx/opening-a-bottle-of-beer-trimmed.mp3"
+      preload="auto"
+      aria-hidden="true"
+    ></audio>
+    <audio
+      id="drinkingSound"
+      src="public/audio/sfx/drinking-from-aluminum-can-80082.mp3"
+      preload="auto"
+      aria-hidden="true"
+    ></audio>
+    <audio
+      id="ideaHmmSound"
+      src="public/audio/sfx/hmmm-idea-male-420028.mp3"
+      preload="auto"
+      aria-hidden="true"
+    ></audio>
+    <audio
+      id="remoteButtonSound"
+      src="public/audio/sfx/remote-button-press-382713.mp3"
+      preload="auto"
+      aria-hidden="true"
+    ></audio>
+    <audio
+      id="tubeTvOpeningSound"
+      src="public/audio/sfx/old-tube-tv-opening-first-second.mp3"
+      preload="auto"
+      aria-hidden="true"
+    ></audio>
+    <audio
+      id="tvStaticNoise"
+      src="public/audio/sfx/tv-static-noise-291374.mp3"
+      preload="auto"
+      loop
+      aria-hidden="true"
+    ></audio>
+    <audio
+      id="toolboxOpeningSound"
+      src="public/audio/sfx/toolbox-opening-40366.mp3"
+      preload="auto"
+      aria-hidden="true"
+    ></audio>
+    <audio
+      id="toolboxRummagingSound"
+      src="public/audio/sfx/toolbox-rummaging-35825.mp3"
+      preload="auto"
+      loop
+      aria-hidden="true"
+    ></audio>
+    <audio
+      id="fishingSceneMusic"
+      src="public/audio/music/fishing-scenes-japanese-music-560316.mp3"
+      preload="auto"
+      loop
+      aria-hidden="true"
+    ></audio>
+    <audio
+      id="gentleRainAmbience"
+      src="public/audio/ambience/gentle-rain-07-437321.mp3"
+      preload="auto"
+      loop
+      aria-hidden="true"
+    ></audio>
+    <audio
+      id="thunderstormAmbience"
+      src="public/audio/ambience/thunderstorm-14708.mp3"
+      preload="auto"
+      loop
+      aria-hidden="true"
+    ></audio>
+    <audio
+      id="rodChargeSound"
+      src="public/audio/sfx/rod-charge-tighten-199797.mp3"
+      preload="auto"
+      aria-hidden="true"
+    ></audio>
+    <audio
+      id="rodWhooshSound"
+      src="public/audio/sfx/fishing-rod-whoosh-411640.mp3"
+      preload="auto"
+      aria-hidden="true"
+    ></audio>
+    <audio
+      id="castingGruntSound"
+      src="public/audio/sfx/casting-grunt-start-0.22s-103204.mp3"
+      preload="auto"
+      aria-hidden="true"
+    ></audio>
+    <audio
+      id="fishHookSound"
+      src="public/audio/sfx/fish-jumping-splash-2-start-0.86s-96871.mp3"
+      preload="auto"
+      aria-hidden="true"
+    ></audio>
+    <audio
+      id="fishingReelSound"
+      src="public/audio/sfx/fishing-reel-302355.mp3"
+      preload="auto"
+      aria-hidden="true"
+    ></audio>
+    <audio
+      id="landingCongratulationsSound"
+      src="public/audio/sfx/landing-congratulations-trimmed-334724.mp3"
+      preload="auto"
+      aria-hidden="true"
+    ></audio>
+    <audio
+      id="landingVictorySound"
+      src="public/audio/sfx/landing-yeah-trimmed-7106.mp3"
+      preload="auto"
+      aria-hidden="true"
+    ></audio>
+    <audio
+      id="landingWaterSplashSound"
+      src="public/audio/sfx/landing-water-splash-start-0.13s-352021.mp3"
+      preload="auto"
+      aria-hidden="true"
+    ></audio>
+    <audio
+      id="landingOhYeahSound"
+      src="public/audio/sfx/landing-oh-yeah-trimmed-407752.mp3"
+      preload="auto"
+      aria-hidden="true"
+    ></audio>
     <p id="gameStatus" class="sr-only" aria-live="polite">Ready to cast.</p>
   </main>
 
   <noscript>This prototype requires JavaScript.</noscript>
-    <script src="sketch.js?v=20260802ah"></script>
+  <script src="public/js/audio-manager.js?v=20260804-audio-v2"></script>
+  <script src="public/js/catch-answer-shaper.js?v=20260804-catch-v5"></script>
+  <script src="public/js/game-rules.js?v=20260804-rules-v1"></script>
+  <script src="public/js/game-flow.js?v=20260804-flow-v2"></script>
+  <script src="public/js/ai-client.js?v=20260804-server-v3"></script>
+  <script src="sketch.js?v=20260804-cleanup-v34"></script>
 </body>
 </html>

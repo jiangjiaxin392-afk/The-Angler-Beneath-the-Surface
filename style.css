@@ -50,6 +50,20 @@ canvas:focus-visible {
   box-shadow: none;
 }
 
+.canvas-text-input {
+  position: fixed;
+  left: -10000px;
+  top: 0;
+  width: 2px;
+  height: 2px;
+  padding: 0;
+  border: 0;
+  opacity: 0.001;
+  resize: none;
+  overflow: hidden;
+  pointer-events: none;
+}
+
 .loading {
   position: absolute;
   margin: 0;

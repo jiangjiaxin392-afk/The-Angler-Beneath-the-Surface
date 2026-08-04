@@ -1,6 +1,122 @@
 const W = 1920;
 const H = 1080;
 const GRID = 2;
+const EXHIBITION_IDLE_TIMEOUT = 5 * 60 * 1000;
+const EXHIBITION_COVER_REVISION = "20260803-exhibition-v1";
+const HOW_TO_PAGE_REVISION = "20260803-how-to-v3";
+const HOW_TO_PAGE_NAMES = ["idea", "water", "tackle", "weather", "catch"];
+const HOW_TO_PAGE_PATHS = HOW_TO_PAGE_NAMES.map((name, index) => (
+  `public/images/how-to-play/page-${String(index + 1).padStart(2, "0")}-${name}-v3.png?v=${HOW_TO_PAGE_REVISION}`
+));
+const EXHIBITION_START_BUTTON = { x: 800, y: 776, w: 320, h: 135 };
+const EXHIBITION_HOW_TO_BUTTON = { x: 820, y: 928, w: 280, h: 118 };
+const HOW_TO_CLOSE_BUTTON = { x: 1704, y: 30, w: 180, h: 190 };
+const HOW_TO_PREV_BUTTON = { x: 610, y: 970, w: 250, h: 82 };
+const HOW_TO_NEXT_BUTTON = { x: 1060, y: 970, w: 250, h: 82 };
+const HOW_TO_CAPTION_BOUNDS = [
+  [
+    { x: 165, y: 716, w: 458, h: 199 },
+    { x: 693, y: 716, w: 465, h: 199 },
+    { x: 1266, y: 716, w: 456, h: 199 }
+  ],
+  [
+    { x: 165, y: 716, w: 458, h: 199 },
+    { x: 693, y: 716, w: 465, h: 199 },
+    { x: 1266, y: 716, w: 456, h: 199 }
+  ],
+  [
+    { x: 165, y: 720, w: 471, h: 201 },
+    { x: 715, y: 720, w: 461, h: 201 },
+    { x: 1274, y: 720, w: 451, h: 201 }
+  ],
+  [
+    { x: 195, y: 654, w: 450, h: 122 },
+    { x: 720, y: 654, w: 432, h: 122 },
+    { x: 1235, y: 654, w: 457, h: 122 }
+  ],
+  [
+    { x: 182, y: 794, w: 397, h: 145 },
+    { x: 639, y: 794, w: 291, h: 145 },
+    { x: 960, y: 794, w: 314, h: 145 },
+    { x: 1328, y: 794, w: 376, h: 145 }
+  ]
+];
+let exhibitionStartButtonElement = null;
+let exhibitionStartButtonHovered = false;
+let exhibitionHowToButtonElement = null;
+let exhibitionHowToButtonHovered = false;
+let howToCloseButtonElement = null;
+let howToCloseButtonHovered = false;
+let howToPrevButtonElement = null;
+let howToPrevButtonHovered = false;
+let howToNextButtonElement = null;
+let howToNextButtonHovered = false;
+let howToPageIndex = 0;
+let coverJourneyMusicElement = null;
+let coverJourneyMusicFadeToken = 0;
+let coverJourneyMusicFadeTimer = 0;
+let coverJourneyMusicIdleTimer = 0;
+let audioRecoveryToken = 0;
+let beerOpeningSoundElement = null;
+let drinkingSoundElement = null;
+let ideaHmmSoundElement = null;
+let remoteButtonSoundElement = null;
+let tubeTvOpeningSoundElement = null;
+let tvStaticNoiseElement = null;
+let toolboxOpeningSoundElement = null;
+let toolboxRummagingSoundElement = null;
+let fishingSceneMusicElement = null;
+let gentleRainAmbienceElement = null;
+let thunderstormAmbienceElement = null;
+let rodChargeSoundElement = null;
+let rodWhooshSoundElement = null;
+let castingGruntSoundElement = null;
+let fishHookSoundElement = null;
+let fishingReelSoundElement = null;
+let landingCongratulationsSoundElement = null;
+let landingVictorySoundElement = null;
+let landingWaterSplashSoundElement = null;
+let landingOhYeahSoundElement = null;
+const COVER_JOURNEY_MUSIC_VOLUME = 0.38;
+const BEER_OPENING_SOUND_VOLUME = 0.9;
+const DRINKING_SOUND_VOLUME = 0.82;
+const IDEA_HMMM_SOUND_VOLUME = 1.0;
+const REMOTE_BUTTON_SOUND_VOLUME = 1.0;
+const TUBE_TV_OPENING_SOUND_VOLUME = 0.9;
+const TV_STATIC_NOISE_VOLUME = 0.24;
+const TOOLBOX_OPENING_SOUND_VOLUME = 1.0;
+const TOOLBOX_RUMMAGING_SOUND_VOLUME = 0.55;
+const FISHING_SCENE_MUSIC_VOLUME = 0.5;
+const LIGHT_RAIN_AMBIENCE_VOLUME = 0.4;
+const STORM_RAIN_AMBIENCE_VOLUME = 0.7;
+const STORM_THUNDER_AMBIENCE_VOLUME = 0.9;
+const ROD_CHARGE_SOUND_VOLUME = 1.0;
+const ROD_WHOOSH_SOUND_VOLUME = 0.95;
+const CASTING_GRUNT_SOUND_VOLUME = 0.9;
+const FISH_HOOK_SOUND_VOLUME = 0.8;
+const FISHING_REEL_SOUND_VOLUME = 0.72;
+const LANDING_SOUND_VOLUME = 0.78;
+const LANDING_WATER_SPLASH_VOLUME = 1.0;
+const IDEA_HMMM_SOUND_LEAD = 500;
+const TUBE_TV_OPENING_SOUND_LEAD = 500;
+const TV_STATIC_NOISE_STATES = window.AnglerGameFlow.STATE_GROUPS.tvStatic;
+const FISHING_SCENE_MUSIC_STATES = window.AnglerGameFlow.STATE_GROUPS.fishingMusic;
+const FISHING_SCENE_MUSIC_START_STATES = window.AnglerGameFlow.STATE_GROUPS.fishingMusicStart;
+const FISH_HOOK_SOUND_STATES = window.AnglerGameFlow.STATE_GROUPS.fishHook;
+const FISHING_REEL_SOUND_STATES = window.AnglerGameFlow.STATE_GROUPS.fishingReel;
+const LANDING_SOUND_STATES = window.AnglerGameFlow.STATE_GROUPS.landing;
+const INTRO_DRINK_START_HOLD = 1000;
+const INTRO_DRINK_FRAME_DURATIONS = [
+  650, 240, 220, 240, 240, 260, 280, 320, 360, 420,
+  500, 650, 500, 420, 360, 320, 280, 260, 300, 650
+];
+const INTRO_DRINK_MOUTH_FRAME_INDEX = 8;
+const INTRO_DRINK_TOTAL_DURATION = 9200;
+const INTRO_REMOTE_FRAME_DURATIONS = [
+  420, 220, 220, 240, 240, 220, 220, 220, 220, 240,
+  300, 440, 500, 260, 240, 220, 220, 220, 300, 500
+];
+const INTRO_REMOTE_BUTTON_PRESS_FRAME_INDICES = [7, 15];
 
 const C = {
   ink: "#10242C",
@@ -31,8 +147,8 @@ const CATCHES = [
   {
     id: "bass",
     name: "LARGEMOUTH BASS",
-    response: "DIRECT ANSWER",
-    category: "TARGET CATCH",
+    response: "FULL RESPONSE",
+    category: "SUBSTANTIAL CATCH",
     relevance: 5,
     uncertainty: 2,
     candidate: "Start with the British Museum, the National Gallery and the South Bank. Add one neighbourhood, such as Greenwich or Notting Hill, based on your interests.",
@@ -64,7 +180,7 @@ const CATCHES = [
   {
     id: "perch",
     name: "YELLOW PERCH",
-    response: "PARTIAL ANSWER",
+    response: "BRIEF ANSWER",
     category: "SMALL CATCH",
     relevance: 3,
     uncertainty: 3,
@@ -86,8 +202,8 @@ const CATCHES = [
   {
     id: "weeds",
     name: "RIVER WEED",
-    response: "IRRELEVANT RESPONSE",
-    category: "NON-TARGET CATCH",
+    response: "OFF-COURSE ANSWER",
+    category: "TANGLED CATCH",
     relevance: 1,
     uncertainty: 4,
     candidate: "Consider taking a day trip to Stonehenge and Bath, followed by an evening in Brighton.",
@@ -97,7 +213,7 @@ const CATCHES = [
   {
     id: "rubbish",
     name: "RIVER RUBBISH",
-    response: "MISLEADING RESPONSE",
+    response: "CHAOTIC ANSWER",
     category: "CONTAMINATED CATCH",
     relevance: 2,
     uncertainty: 5,
@@ -108,7 +224,7 @@ const CATCHES = [
   {
     id: "boot",
     name: "OLD BOOT",
-    response: "OUTDATED RESPONSE",
+    response: "STALE ANSWER",
     category: "RESIDUAL CATCH",
     relevance: 2,
     uncertainty: 4,
@@ -118,50 +234,180 @@ const CATCHES = [
   }
 ];
 
+const CAST_VARIATION_ANGLES = [
+  "balanced starting point",
+  "practical next steps",
+  "local perspective",
+  "constraints and trade-offs",
+  "first-time visitor",
+  "budget-conscious route",
+  "comparison of alternatives",
+  "short actionable plan"
+];
+
+const CATCH_GENERATION_GUIDANCE = {
+  bass: "Give a substantial, well-structured answer. Do not claim that it is verified or uniquely correct.",
+  trout: "Give a useful answer with a clear recommendation and practical next steps.",
+  pike: "Give one decisive interpretation. Keep uncertainty visible where evidence would still be needed.",
+  perch: "Return only one ultra-short direct answer: one concrete noun phrase, place, number or reason. No explanation, qualification, alternatives or second sentence.",
+  carp: "Give a relevant but overloaded answer with too many branches and weak prioritisation.",
+  weeds: "Begin with one small relevant fragment, then visibly drift into a nearby discussion and leave the original question unanswered.",
+  rubbish: "Create a visibly chaotic answer related to the question through repetition, fragments and disordered structure. Do not invent dangerous facts or unrelated nonsense.",
+  boot: "Give advice framed as potentially stale: make dates, current validity or source freshness visibly unresolved."
+};
+
+const AI_PREP_REVISION = "20260804-catch-shape-v5";
+
 const EXAMPLE_QUESTION = "What attractions should I visit in London?";
 
 const WEATHER_CONDITIONS = [
   {
     id: "sunny",
     title: "CLEAR",
-    status: "CONDITIONS STABLE",
-    note: "SERVICES AND TOOLS ARE RESPONDING NORMALLY",
+    status: "EXTERNAL CONDITIONS STEADY",
+    note: "NORMAL WAIT / CLEAR SIGNAL / FORGIVING CONTROL",
     accent: "#F0C64F",
     sky: "#2B7891"
   },
   {
     id: "cloudy",
     title: "OVERCAST",
-    status: "SOURCES LIMITED",
-    note: "SOME CURRENT INFORMATION MAY BE UNAVAILABLE",
+    status: "EXTERNAL LOAD RISING",
+    note: "SLIGHT DELAY / CONTROL REMAINS FORGIVING",
     accent: "#D8D0B7",
     sky: "#526A71"
   },
   {
     id: "fog",
     title: "FOG",
-    status: "LOW VISIBILITY",
-    note: "THE BASIS OF THE RESPONSE MAY BE HARD TO TRACE",
+    status: "FEEDBACK OBSCURED",
+    note: "BITE SIGNALS ARE HARDER TO READ",
     accent: "#B9D3CC",
     sky: "#506E6C"
   },
   {
     id: "rain",
     title: "RAIN",
-    status: "RESPONSE DELAYED",
-    note: "NETWORK OR SERVER LOAD MAY SLOW THE RESULT",
+    status: "CONNECTION FLUCTUATING",
+    note: "ACTIVE WATER / SHORTER REACTION WINDOW",
     accent: "#63C3D5",
     sky: "#244D66"
   },
   {
     id: "storm",
     title: "STORM",
-    status: "SERVICE UNSTABLE",
-    note: "AN EXTERNAL SERVICE OR TOOL MAY FAIL",
+    status: "EXTERNAL CONDITIONS SEVERE",
+    note: "LONG WAIT / STRONG RESISTANCE / HIGHER LOSS RISK",
     accent: "#E85D72",
     sky: "#302D50"
   }
 ];
+
+// Weather is an external, uncontrollable condition. These profiles affect only
+// the act of landing a response: wait time, signal clarity, reaction time and
+// line control. They never change the question, tackle prompt or catch content.
+const WEATHER_GAMEPLAY_PROFILES = {
+  sunny: {
+    biteDelay: [2.4, 4.2],
+    biteWindow: 2.65,
+    cueStrength: 1,
+    pullRate: 0.19,
+    releaseRate: -0.12,
+    surgeWave: 0.045,
+    surgeNoise: 0.038,
+    surgeSpeed: 0.0047,
+    controlMin: 0.23,
+    controlMax: 0.84,
+    progressBase: 0.17,
+    progressTension: 0.065,
+    progressLoss: 0.02,
+    snapGrace: 1.35,
+    escapeGrace: 1.55,
+    fishTravel: 225,
+    fishTravelSpeed: 0.0019,
+    splashCadence: 13
+  },
+  cloudy: {
+    biteDelay: [3, 5],
+    biteWindow: 2.4,
+    cueStrength: 0.9,
+    pullRate: 0.195,
+    releaseRate: -0.12,
+    surgeWave: 0.05,
+    surgeNoise: 0.042,
+    surgeSpeed: 0.005,
+    controlMin: 0.24,
+    controlMax: 0.83,
+    progressBase: 0.165,
+    progressTension: 0.06,
+    progressLoss: 0.022,
+    snapGrace: 1.25,
+    escapeGrace: 1.45,
+    fishTravel: 240,
+    fishTravelSpeed: 0.002,
+    splashCadence: 12
+  },
+  fog: {
+    biteDelay: [2.8, 5.2],
+    biteWindow: 2.2,
+    cueStrength: 0.58,
+    pullRate: 0.195,
+    releaseRate: -0.12,
+    surgeWave: 0.052,
+    surgeNoise: 0.045,
+    surgeSpeed: 0.0051,
+    controlMin: 0.245,
+    controlMax: 0.825,
+    progressBase: 0.162,
+    progressTension: 0.058,
+    progressLoss: 0.023,
+    snapGrace: 1.2,
+    escapeGrace: 1.4,
+    fishTravel: 245,
+    fishTravelSpeed: 0.00205,
+    splashCadence: 12
+  },
+  rain: {
+    biteDelay: [1.9, 3.7],
+    biteWindow: 2,
+    cueStrength: 0.82,
+    pullRate: 0.2,
+    releaseRate: -0.125,
+    surgeWave: 0.062,
+    surgeNoise: 0.052,
+    surgeSpeed: 0.0058,
+    controlMin: 0.25,
+    controlMax: 0.815,
+    progressBase: 0.158,
+    progressTension: 0.057,
+    progressLoss: 0.025,
+    snapGrace: 1.15,
+    escapeGrace: 1.35,
+    fishTravel: 270,
+    fishTravelSpeed: 0.0023,
+    splashCadence: 9
+  },
+  storm: {
+    biteDelay: [4.8, 7.4],
+    biteWindow: 1.85,
+    cueStrength: 0.72,
+    pullRate: 0.205,
+    releaseRate: -0.13,
+    surgeWave: 0.07,
+    surgeNoise: 0.058,
+    surgeSpeed: 0.0063,
+    controlMin: 0.26,
+    controlMax: 0.805,
+    progressBase: 0.152,
+    progressTension: 0.055,
+    progressLoss: 0.028,
+    snapGrace: 1.1,
+    escapeGrace: 1.3,
+    fishTravel: 290,
+    fishTravelSpeed: 0.00255,
+    splashCadence: 8
+  }
+};
 
 const TV_CAMERA = {
   focus: { x: 922, y: 358 },
@@ -183,8 +429,8 @@ const WATER_LOCATIONS = [
   {
     id: "daylight-river",
     name: "DAYLIGHT RIVER",
-    model: "GENERAL MODEL",
-    note: "BEST FOR: EVERYDAY QUESTIONS, IDEAS, SIMPLE EXPLANATIONS",
+    model: "DIRECT ANSWER MODEL",
+    note: "DIRECTLY UNDERSTANDS THE QUESTION / GENERAL, CLEAR ANSWERS",
     hit: { x: 55, y: 70, w: 550, h: 445 },
     art: { x: 170, y: 105, w: 340, h: 310 },
     label: { x: 76, y: 390, w: 500, h: 112 }
@@ -192,8 +438,8 @@ const WATER_LOCATIONS = [
   {
     id: "signal-canal",
     name: "SIGNAL CANAL",
-    model: "WEB SEARCH MODEL",
-    note: "BEST FOR: CURRENT FACTS, TRAVEL, NEWS, RECOMMENDATIONS",
+    model: "SEARCH & SYNTHESIS MODEL",
+    note: "SEARCHES WEB SOURCES / OFFICIAL INFORMATION / FORUM EXPERIENCE",
     hit: { x: 875, y: 70, w: 550, h: 445 },
     art: { x: 985, y: 105, w: 345, h: 310 },
     label: { x: 900, y: 390, w: 500, h: 112 }
@@ -201,8 +447,8 @@ const WATER_LOCATIONS = [
   {
     id: "sunken-reservoir",
     name: "SUNKEN RESERVOIR",
-    model: "REASONING MODEL",
-    note: "BEST FOR: COMPARISONS, PLANNING, MULTI-STEP PROBLEMS",
+    model: "COMPARISON MODEL",
+    note: "COMPARES OPTIONS / BREAKS DOWN ROUTES / ANALYSES TRADE-OFFS",
     hit: { x: 430, y: 535, w: 640, h: 440 },
     art: { x: 585, y: 565, w: 350, h: 300 },
     label: { x: 475, y: 845, w: 530, h: 112 }
@@ -287,6 +533,14 @@ const ARCHIVE_PANELS = {
   close: { x: 1568, y: 895, w: 272, h: 92 }
 };
 const ARCHIVE_SLOT_LAYOUT = { x: 80, y: 137, stepX: 196, stepY: 297, w: 188, h: 286 };
+const ARCHIVE_PAGE_SIZE = 8;
+const ARCHIVE_MAX_CATCHES = 32;
+const ARCHIVE_PAGINATION = {
+  previous: { x: 342, y: 833, w: 118, h: 72 },
+  label: { x: 462, y: 840, w: 116, h: 54 },
+  next: { x: 580, y: 833, w: 118, h: 72 }
+};
+const QUESTION_MAX_LENGTH = 400;
 
 const QUESTION_BOUNDS = {
   input: { x: 792, y: 220, w: 932, h: 400 },
@@ -351,10 +605,16 @@ const INTERACTION_ASSETS = {
 };
 
 const BACKPACK_BUTTON = { x: 1798, y: 996, w: 88, h: 70 };
+const HOME_BUTTON = { x: 1692, y: 16, w: 172, h: 52 };
+const HOME_BUTTON_STATES = new Set(window.AnglerGameFlow.HOME_BUTTON_STATES);
 
 const game = {
-  state: "introDrink",
+  state: "cover",
   stateStarted: 0,
+  exhibitionSessionId: 0,
+  exhibitionSessionActive: false,
+  lastActivityAt: 0,
+  idleResetAt: 0,
   charge: 0,
   castPower: 0,
   castTarget: { x: 1050, y: 665 },
@@ -375,46 +635,57 @@ const game = {
   currentCatch: null,
   inventory: [],
   archiveSelected: -1,
+  archivePage: 0,
   archiveReturnState: "ready",
   question: "",
-  questionFocused: true,
+  questionFocused: false,
+  aiRecommendation: null,
   recommendations: [],
   recommendationDeck: [],
   selectedRecommendation: -1,
   selectedTackleId: null,
   judgement: null,
   currentKept: false,
-  hoverTip: null,
   targetShadowIndex: 0,
   lastQuestionEditAt: 0,
   targetLockAt: 0,
   tackleSelectAt: 0,
-  saveStampAt: 0,
   weatherIndex: -1,
   waterIndex: -1,
   waterSelectAt: 0,
   waterSelectOrigin: null,
+  currentCast: null,
+  recentCastSignatures: [],
+  textScroll: {},
+  inventoryFullAt: 0,
   skipHoldStartedAt: 0,
-  skipConsumed: false
+  skipConsumed: false,
+  questionFocusAfterSpaceRelease: false,
+  questionBeforeCutsceneSkip: "",
+  drinkingSoundPlayed: false,
+  remoteButtonSoundPressIndex: 0,
+  ideaHmmSoundPrestarted: false,
+  tubeTvOpeningSoundPrestarted: false
 };
 
 let lastFrameTime = 0;
 let previewImpactTime = null;
 let previewAnglerState = null;
+let questionInputElement = null;
+let activeScrollRegions = [];
+let exhibitionCover;
+const howToPages = new Array(HOW_TO_PAGE_PATHS.length).fill(null);
+const howToPageLoadStates = new Array(HOW_TO_PAGE_PATHS.length).fill("idle");
 const locationBackgrounds = {};
 const locationSceneFrames = {};
+const locationSceneLoadState = {};
 const anglerFrames = [];
 let plantAFrames;
 let plantBFrames;
-let fishShadowFrames;
 let rippleFrames;
 let splashFrames;
 let backpackClosed;
-let backpackOpen;
-let catchImpact;
-let recommendationAtlas;
 let targetScreenBase;
-let tackleScreenBase;
 let tackleScreenV2Overlay;
 const tackleCardHoverFrames = [];
 const tackleCardSelectedFrames = [];
@@ -423,7 +694,7 @@ const tackleWeightIcons = [];
 const tackleRetrieveIcons = [];
 const tackleButtonIcons = { back: {}, refresh: {} };
 let tackleSelectedMarker;
-let resultScreenFrame;
+let recommendationBulb;
 let resultSceneFrameV3;
 let resultQuestionPanelV3;
 let resultAnswerPanelV3;
@@ -436,23 +707,19 @@ let archiveAnswerPanelV2;
 let archiveRecordPanelV2;
 const archiveSlotFramesV2 = {};
 const archiveCloseFramesV2 = {};
+const archivePageFramesV3 = {};
+let backpackFullBannerV3;
 let interactionAssetSheet;
-let archiveCatchSheet;
-let targetLockSheet;
-let tackleSelectSheet;
 let fishingEffectsSheet;
-let catchRevealSheet;
-let saveComicSheet;
 let hookedAnglerLayer;
 let hookedFishLayer;
 let hookedLineLayer;
+const juvenilePerchV2 = {};
 let catchResultsNativeSheet;
 let archiveCatchesNativeSheet;
 let targetShadowsNativeSheet;
-let backpackOpenNativeSource;
-let backpackOpenNative;
 let uiFont;
-const catchImages = [];
+let cjkUiFont;
 const archiveCatchSprites = [];
 const catchResultSprites = [];
 const sceneCloudFrames = [];
@@ -462,15 +729,10 @@ const sceneAmbientFrames = [];
 const castComicFrames = [];
 const biteComicFrames = [];
 const tensionComicFrames = [];
-const catchRevealFrames = [];
 const hookedWaterFrames = [];
 const hookedSlashFrames = [];
 const hookedDropletFrames = [];
-const saveStampFrames = [];
-const comicOrnaments = [];
-const tackleSelectFrames = [];
 const targetShadowFrames = [];
-const targetLockFrames = [];
 let livingRoomBase;
 let livingRoomLegs;
 let livingThoughtUi;
@@ -503,7 +765,6 @@ const weatherFx = {
 const livingBeerFrames = [];
 const livingIdeaFrames = [];
 const livingRemoteFrames = [];
-const livingTvFrames = [];
 const livingTargetFish = [];
 let toolboxRoomBackground;
 const toolboxFrames = [];
@@ -535,14 +796,7 @@ const HOOKED_ANGLER_REVISION = "20260802-fullbody-v3";
 const ANGLER_GAMEPLAY_REVISION = "20260802-combined-v2-shoes";
 const HOOKED_TRANSITION_DURATION = 3250;
 const CUTSCENE_SKIP_HOLD = 800;
-const CUTSCENE_GROUPS = {
-  introDrink: "livingQuestion",
-  introIdea: "livingQuestion",
-  introRemote: "weather",
-  introTv: "weather",
-  toolboxIntro: "tackle",
-  impact: "result"
-};
+const CUTSCENE_GROUPS = window.AnglerGameFlow.CUTSCENE_TARGETS;
 
 const ANGLER = {
   x: 227,
@@ -661,28 +915,14 @@ const ANGLER_POSES = {
 
 function preload() {
   uiFont = loadFont("public/fonts/RetroSans.ttf");
+  cjkUiFont = loadFont("public/fonts/SmileySans-Oblique.ttf");
+  exhibitionCover = loadImage(`public/images/exhibition-cover/cover-v1.png?v=${EXHIBITION_COVER_REVISION}`);
+  howToPageLoadStates[0] = "loading";
+  howToPages[0] = loadImage(HOW_TO_PAGE_PATHS[0]);
   for (const profile of Object.values(LOCATION_PROFILES)) {
     locationBackgrounds[profile.id] = loadImage(profile.backgroundPath);
     if (profile.sceneType !== "modular") continue;
-    const animationRoot = `public/images/location-backgrounds/${profile.id}/animations`;
     locationSceneFrames[profile.id] = { water: [], site: [], runoff: [], stormCloud: [] };
-    const locationSequences = [
-      { key: "water", folder: "water" },
-      {
-        key: "site",
-        folder: profile.id === "signal-canal" ? "site-opaque-hook-v2" : "site"
-      },
-      { key: "runoff", folder: "runoff" },
-      { key: "stormCloud", folder: "storm-cloud" }
-    ];
-    for (const { key, folder } of locationSequences) {
-      for (let i = 0; i < LOCATION_SCENE_FRAME_COUNT; i += 1) {
-        const frameName = String(i).padStart(2, "0");
-        locationSceneFrames[profile.id][key].push(
-          loadImage(`${animationRoot}/${folder}/frame-${frameName}.png?v=${LOCATION_SCENE_REVISION}`)
-        );
-      }
-    }
   }
   for (const frameFile of ANGLER_FRAME_FILES) {
     anglerFrames.push(
@@ -691,15 +931,10 @@ function preload() {
   }
   plantAFrames = loadImage("public/images/plant-a-frames.png");
   plantBFrames = loadImage("public/images/plant-b-frames.png");
-  fishShadowFrames = loadImage("public/images/fish-shadow-frames.png");
   rippleFrames = loadImage("public/images/ripple-frames.png");
   splashFrames = loadImage("public/images/splash-frames.png");
   backpackClosed = loadImage("public/images/backpack-closed.png");
-  backpackOpen = loadImage("public/images/backpack-open.png");
-  catchImpact = loadImage("public/images/catch-impact.png");
-  recommendationAtlas = loadImage("public/images/interaction-ui-atlas.png");
   targetScreenBase = loadImage("public/images/target-screen-base.png");
-  tackleScreenBase = loadImage("public/images/tackle-screen-base.png");
   tackleScreenV2Overlay = loadImage(
     `public/images/tackle-ui-v2/tackle-ui-overlay-v1-alpha.png?v=${TACKLE_UI_REVISION}`
   );
@@ -736,6 +971,9 @@ function preload() {
   }
   tackleSelectedMarker = loadImage(
     `${tackleComponentRoot}/selected-marker.png?v=${TACKLE_UI_REVISION}`
+  );
+  recommendationBulb = loadImage(
+    "public/images/recommendation-ui-v1/recommendation-bulb-v1.png?v=20260802-v2"
   );
   const resultUiRoot = "public/images/result-ui-v3";
   resultSceneFrameV3 = loadImage(
@@ -776,13 +1014,12 @@ function preload() {
   archiveSlotFramesV2.selected = loadImage(`${archiveUiRoot}/slot-selected.png?v=${ARCHIVE_UI_REVISION}`);
   archiveCloseFramesV2.default = loadImage(`${archiveUiRoot}/close-default.png?v=${ARCHIVE_UI_REVISION}`);
   archiveCloseFramesV2.hover = loadImage(`${archiveUiRoot}/close-hover.png?v=${ARCHIVE_UI_REVISION}`);
+  const archiveUiV3Root = "public/images/archive-ui-v3/components";
+  archivePageFramesV3.default = loadImage(`${archiveUiV3Root}/page-prev-default.png?v=20260802-v1`);
+  archivePageFramesV3.hover = loadImage(`${archiveUiV3Root}/page-prev-hover.png?v=20260802-v1`);
+  backpackFullBannerV3 = loadImage(`${archiveUiV3Root}/backpack-full-banner.png?v=20260802-v1`);
   interactionAssetSheet = loadImage("public/images/interaction-assets.png");
-  archiveCatchSheet = loadImage("public/images/comic/archive-catches-sheet.png");
-  targetLockSheet = loadImage("public/images/comic/target-lock-sheet.png");
-  tackleSelectSheet = loadImage("public/images/comic/tackle-select-sheet.png");
   fishingEffectsSheet = loadImage("public/images/comic/fishing-effects-sheet.png");
-  catchRevealSheet = loadImage("public/images/comic/catch-reveal-sheet.png");
-  saveComicSheet = loadImage("public/images/comic/save-comic-sheet.png");
   const hookedTransitionRoot = "public/images/result-effects-v2/hooked-transition-v2";
   const hookedAnglerRoot = "public/images/result-effects-v2/hooked-transition-v4";
   hookedAnglerLayer = loadImage(
@@ -794,6 +1031,11 @@ function preload() {
   hookedLineLayer = loadImage(
     `${hookedTransitionRoot}/layers/line.png?v=${HOOKED_TRANSITION_REVISION}`
   );
+  const juvenilePerchRoot = "public/images/perch-v2";
+  juvenilePerchV2.fish = loadImage(`${juvenilePerchRoot}/juvenile-perch.png?v=20260804-v2`);
+  juvenilePerchV2.hands = loadImage(`${juvenilePerchRoot}/juvenile-perch-hands.png?v=20260804-v2`);
+  juvenilePerchV2.target = loadImage(`${juvenilePerchRoot}/juvenile-perch-target.png?v=20260804-v2`);
+  juvenilePerchV2.shadow = loadImage(`${juvenilePerchRoot}/juvenile-perch-shadow.png?v=20260804-v2`);
   for (let i = 0; i < 6; i += 1) {
     const frameName = String(i).padStart(2, "0");
     hookedWaterFrames.push(
@@ -815,7 +1057,6 @@ function preload() {
   catchResultsNativeSheet = loadImage("public/images/catch-results-native-source.png");
   archiveCatchesNativeSheet = loadImage("public/images/archive-catches-native-source.png");
   targetShadowsNativeSheet = loadImage("public/images/target-shadows-native-source.png");
-  backpackOpenNativeSource = loadImage("public/images/backpack-open-native-source.png");
   const livingRoot = "public/images/living-room-sequence";
   livingRoomBase = loadImage(`${livingRoot}/01-room-base.png`);
   livingRoomLegs = loadImage(`${livingRoot}/02-legs-full.png`);
@@ -850,9 +1091,9 @@ function preload() {
   for (let i = 1; i <= 8; i += 1) {
     const frameName = String(i).padStart(2, "0");
     livingIdeaFrames.push(loadImage(`${livingRoot}/idea-frames/frame-${frameName}.png`));
-    livingTvFrames.push(loadImage(`${livingRoot}/tv-frames/frame-${frameName}.png`));
   }
-  ["01-perch", "02-trout", "03-pike", "04-carp", "05-bass"].forEach((name) => {
+  livingTargetFish.push(juvenilePerchV2.target);
+  ["02-trout", "03-pike", "04-carp", "05-bass"].forEach((name) => {
     livingTargetFish.push(loadImage(`${livingRoot}/target-fish/${name}.png`));
   });
   const toolboxRoot = "public/images/toolbox-sequence";
@@ -871,9 +1112,6 @@ function preload() {
     const frameName = String(i).padStart(2, "0");
     toolboxLeftHandFrames.push(loadImage(`${toolboxV3Root}/left-hand-frames/frame-${frameName}.png?v=${TOOLBOX_ASSET_REVISION}`));
   }
-  for (const catchDefinition of CATCHES) {
-    catchImages.push(loadImage(`public/images/catch-${catchDefinition.id}-transparent.png`));
-  }
   for (let i = 0; i < 8; i += 1) {
     sceneCloudFrames.push(loadImage(`public/images/scene-cloud-frame-${i}.png`));
     sceneFoliageFrames.push(loadImage(`public/images/scene-foliage-frame-${i}.png`));
@@ -888,6 +1126,8 @@ function setup() {
   document.getElementById("startupLoader")?.remove();
   canvas.elt.tabIndex = 0;
   canvas.elt.addEventListener("pointerdown", () => canvas.elt.focus());
+  canvas.elt.addEventListener("click", handleExhibitionCoverClick);
+  setupExhibitionStartButtonOverlay();
   canvas.elt.focus();
   pixelDensity(1);
   frameRate(60);
@@ -895,11 +1135,912 @@ function setup() {
   strokeCap(SQUARE);
   strokeJoin(MITER);
   textFont(uiFont);
+  setupNativeQuestionInput();
+  setupExhibitionActivityListeners();
+  setupExhibitionAudio();
   prepareComicAssets();
   game.stateStarted = millis();
   refreshRecommendations();
   applyPreviewState();
+  applyStateIntegrityPlan(getStateIntegrityPlan(game.state));
+  howToPageLoadStates[0] = "ready";
+  if (FISHING_SCENE_MUSIC_START_STATES.includes(game.state)) startFishingSceneMusic();
+  if (game.state === "charging") playRodChargeSound();
+  if (FISH_HOOK_SOUND_STATES.includes(game.state)) startFishHookSound();
+  if (FISHING_REEL_SOUND_STATES.includes(game.state)) startFishingReelSound();
+  if (game.state === "impact") playLandingSoundSequence();
+  game.exhibitionSessionActive = game.state !== "cover";
+  game.lastActivityAt = millis();
+  syncQuestionInputState();
   updateAccessibleStatus();
+}
+
+function setupExhibitionActivityListeners() {
+  const activityEvents = ["pointerdown", "pointermove", "keydown", "wheel", "touchstart", "paste", "input"];
+  for (const eventName of activityEvents) {
+    window.addEventListener(eventName, noteExhibitionActivity, { passive: true });
+  }
+}
+
+function noteExhibitionActivity() {
+  if (coverJourneyMusicElement && !coverJourneyMusicElement.paused) {
+    scheduleCoverJourneyMusicIdleStop();
+  }
+  if (!game.exhibitionSessionActive) return;
+  game.lastActivityAt = millis();
+}
+
+function setupExhibitionAudio() {
+  coverJourneyMusicElement = document.querySelector("#coverJourneyMusic");
+  if (coverJourneyMusicElement) {
+    coverJourneyMusicElement.loop = true;
+    coverJourneyMusicElement.volume = COVER_JOURNEY_MUSIC_VOLUME;
+    window.addEventListener("pointerdown", () => {
+      if (game.state === "cover") startCoverJourneyMusic();
+    }, { capture: true, passive: true });
+  }
+  beerOpeningSoundElement = document.querySelector("#beerOpeningSound");
+  if (beerOpeningSoundElement) beerOpeningSoundElement.volume = BEER_OPENING_SOUND_VOLUME;
+  drinkingSoundElement = document.querySelector("#drinkingSound");
+  if (drinkingSoundElement) drinkingSoundElement.volume = DRINKING_SOUND_VOLUME;
+  ideaHmmSoundElement = document.querySelector("#ideaHmmSound");
+  if (ideaHmmSoundElement) ideaHmmSoundElement.volume = IDEA_HMMM_SOUND_VOLUME;
+  remoteButtonSoundElement = document.querySelector("#remoteButtonSound");
+  if (remoteButtonSoundElement) remoteButtonSoundElement.volume = REMOTE_BUTTON_SOUND_VOLUME;
+  tubeTvOpeningSoundElement = document.querySelector("#tubeTvOpeningSound");
+  if (tubeTvOpeningSoundElement) tubeTvOpeningSoundElement.volume = TUBE_TV_OPENING_SOUND_VOLUME;
+  tvStaticNoiseElement = document.querySelector("#tvStaticNoise");
+  if (tvStaticNoiseElement) {
+    tvStaticNoiseElement.loop = true;
+    tvStaticNoiseElement.volume = TV_STATIC_NOISE_VOLUME;
+  }
+  toolboxOpeningSoundElement = document.querySelector("#toolboxOpeningSound");
+  if (toolboxOpeningSoundElement) {
+    toolboxOpeningSoundElement.volume = TOOLBOX_OPENING_SOUND_VOLUME;
+    toolboxOpeningSoundElement.addEventListener("ended", () => {
+      if (["toolboxIntro", "tackle"].includes(game.state)) startToolboxRummagingSound();
+    });
+  }
+  toolboxRummagingSoundElement = document.querySelector("#toolboxRummagingSound");
+  if (toolboxRummagingSoundElement) {
+    toolboxRummagingSoundElement.loop = true;
+    toolboxRummagingSoundElement.volume = TOOLBOX_RUMMAGING_SOUND_VOLUME;
+  }
+  fishingSceneMusicElement = document.querySelector("#fishingSceneMusic");
+  if (fishingSceneMusicElement) {
+    fishingSceneMusicElement.loop = true;
+    fishingSceneMusicElement.volume = FISHING_SCENE_MUSIC_VOLUME;
+  }
+  gentleRainAmbienceElement = document.querySelector("#gentleRainAmbience");
+  if (gentleRainAmbienceElement) {
+    gentleRainAmbienceElement.loop = true;
+    gentleRainAmbienceElement.volume = LIGHT_RAIN_AMBIENCE_VOLUME;
+  }
+  thunderstormAmbienceElement = document.querySelector("#thunderstormAmbience");
+  if (thunderstormAmbienceElement) {
+    thunderstormAmbienceElement.loop = true;
+    thunderstormAmbienceElement.volume = STORM_THUNDER_AMBIENCE_VOLUME;
+  }
+  rodChargeSoundElement = document.querySelector("#rodChargeSound");
+  if (rodChargeSoundElement) {
+    rodChargeSoundElement.loop = false;
+    rodChargeSoundElement.volume = ROD_CHARGE_SOUND_VOLUME;
+  }
+  rodWhooshSoundElement = document.querySelector("#rodWhooshSound");
+  if (rodWhooshSoundElement) {
+    rodWhooshSoundElement.loop = false;
+    rodWhooshSoundElement.volume = ROD_WHOOSH_SOUND_VOLUME;
+  }
+  castingGruntSoundElement = document.querySelector("#castingGruntSound");
+  if (castingGruntSoundElement) {
+    castingGruntSoundElement.loop = false;
+    castingGruntSoundElement.volume = CASTING_GRUNT_SOUND_VOLUME;
+  }
+  fishHookSoundElement = document.querySelector("#fishHookSound");
+  if (fishHookSoundElement) {
+    fishHookSoundElement.loop = true;
+    fishHookSoundElement.volume = FISH_HOOK_SOUND_VOLUME;
+  }
+  fishingReelSoundElement = document.querySelector("#fishingReelSound");
+  if (fishingReelSoundElement) {
+    fishingReelSoundElement.loop = true;
+    fishingReelSoundElement.volume = FISHING_REEL_SOUND_VOLUME;
+  }
+  landingCongratulationsSoundElement = document.querySelector("#landingCongratulationsSound");
+  if (landingCongratulationsSoundElement) {
+    landingCongratulationsSoundElement.loop = false;
+    landingCongratulationsSoundElement.volume = LANDING_SOUND_VOLUME;
+    landingCongratulationsSoundElement.addEventListener("ended", () => {
+      if (LANDING_SOUND_STATES.includes(game.state)) playLandingRevealSounds();
+    });
+  }
+  landingVictorySoundElement = document.querySelector("#landingVictorySound");
+  if (landingVictorySoundElement) {
+    landingVictorySoundElement.loop = false;
+    landingVictorySoundElement.volume = LANDING_SOUND_VOLUME;
+    landingVictorySoundElement.addEventListener("ended", () => {
+      if (LANDING_SOUND_STATES.includes(game.state)) playLandingOhYeahSound();
+    });
+  }
+  landingWaterSplashSoundElement = document.querySelector("#landingWaterSplashSound");
+  if (landingWaterSplashSoundElement) {
+    landingWaterSplashSoundElement.loop = false;
+    landingWaterSplashSoundElement.volume = LANDING_WATER_SPLASH_VOLUME;
+  }
+  landingOhYeahSoundElement = document.querySelector("#landingOhYeahSound");
+  if (landingOhYeahSoundElement) {
+    landingOhYeahSoundElement.loop = false;
+    landingOhYeahSoundElement.volume = LANDING_SOUND_VOLUME;
+  }
+  window.addEventListener("pagehide", () => stopAllGameAudio({ includeCover: true }), { once: true });
+}
+
+function stopBeerOpeningSound() {
+  window.AnglerAudio.stop(beerOpeningSoundElement);
+}
+
+function playBeerOpeningSound() {
+  window.AnglerAudio.play(beerOpeningSoundElement, {
+    restart: true,
+    volume: BEER_OPENING_SOUND_VOLUME
+  });
+}
+
+function stopDrinkingSound() {
+  window.AnglerAudio.stop(drinkingSoundElement);
+}
+
+function playDrinkingSound() {
+  window.AnglerAudio.play(drinkingSoundElement, {
+    restart: true,
+    volume: DRINKING_SOUND_VOLUME
+  });
+}
+
+function stopIdeaHmmSound() {
+  window.AnglerAudio.stop(ideaHmmSoundElement);
+}
+
+function playIdeaHmmSound() {
+  window.AnglerAudio.play(ideaHmmSoundElement, {
+    restart: true,
+    volume: IDEA_HMMM_SOUND_VOLUME
+  });
+}
+
+function stopRemoteButtonSound() {
+  window.AnglerAudio.stop(remoteButtonSoundElement);
+}
+
+function playRemoteButtonSound() {
+  window.AnglerAudio.play(remoteButtonSoundElement, {
+    restart: true,
+    volume: REMOTE_BUTTON_SOUND_VOLUME
+  });
+}
+
+function stopTubeTvOpeningSound() {
+  window.AnglerAudio.stop(tubeTvOpeningSoundElement);
+}
+
+function playTubeTvOpeningSound() {
+  window.AnglerAudio.play(tubeTvOpeningSoundElement, {
+    restart: true,
+    volume: TUBE_TV_OPENING_SOUND_VOLUME
+  });
+}
+
+function stopTvStaticNoise() {
+  window.AnglerAudio.stop(tvStaticNoiseElement);
+}
+
+function startTvStaticNoise() {
+  window.AnglerAudio.play(tvStaticNoiseElement, {
+    loop: true,
+    onlyIfPaused: true,
+    volume: TV_STATIC_NOISE_VOLUME
+  });
+}
+
+function stopToolboxOpeningSound() {
+  window.AnglerAudio.stop(toolboxOpeningSoundElement);
+}
+
+function playToolboxOpeningSound() {
+  const recoveryToken = audioRecoveryToken;
+  window.AnglerAudio.play(toolboxOpeningSoundElement, {
+    restart: true,
+    volume: TOOLBOX_OPENING_SOUND_VOLUME,
+    onFailure: () => {
+      if (recoveryToken === audioRecoveryToken && ["toolboxIntro", "tackle"].includes(game.state)) {
+        startToolboxRummagingSound();
+      }
+    }
+  });
+}
+
+function stopToolboxRummagingSound() {
+  window.AnglerAudio.stop(toolboxRummagingSoundElement);
+}
+
+function startToolboxRummagingSound() {
+  window.AnglerAudio.play(toolboxRummagingSoundElement, {
+    loop: true,
+    onlyIfPaused: true,
+    volume: TOOLBOX_RUMMAGING_SOUND_VOLUME
+  });
+}
+
+function resetLoopingAmbience(soundElement) {
+  window.AnglerAudio.stop(soundElement);
+}
+
+function startLoopingAmbience(soundElement, volume) {
+  window.AnglerAudio.play(soundElement, {
+    loop: true,
+    onlyIfPaused: true,
+    volume
+  });
+}
+
+function stopFishingWeatherAmbience() {
+  resetLoopingAmbience(gentleRainAmbienceElement);
+  resetLoopingAmbience(thunderstormAmbienceElement);
+}
+
+function startFishingWeatherAmbience() {
+  if (!FISHING_SCENE_MUSIC_START_STATES.includes(game.state)) {
+    stopFishingWeatherAmbience();
+    return;
+  }
+  const weatherId = WEATHER_CONDITIONS[game.weatherIndex]?.id;
+  if (weatherId === "rain") {
+    resetLoopingAmbience(thunderstormAmbienceElement);
+    startLoopingAmbience(gentleRainAmbienceElement, LIGHT_RAIN_AMBIENCE_VOLUME);
+    return;
+  }
+  if (weatherId === "storm") {
+    startLoopingAmbience(gentleRainAmbienceElement, STORM_RAIN_AMBIENCE_VOLUME);
+    startLoopingAmbience(thunderstormAmbienceElement, STORM_THUNDER_AMBIENCE_VOLUME);
+    return;
+  }
+  stopFishingWeatherAmbience();
+}
+
+function stopFishingSceneMusic() {
+  stopFishingWeatherAmbience();
+  window.AnglerAudio.stop(fishingSceneMusicElement);
+}
+
+function startFishingSceneMusic() {
+  startFishingWeatherAmbience();
+  window.AnglerAudio.play(fishingSceneMusicElement, {
+    loop: true,
+    onlyIfPaused: true,
+    volume: FISHING_SCENE_MUSIC_VOLUME
+  });
+}
+
+function stopRodChargeSound() {
+  window.AnglerAudio.stop(rodChargeSoundElement);
+}
+
+function playRodChargeSound() {
+  window.AnglerAudio.play(rodChargeSoundElement, {
+    loop: false,
+    restart: true,
+    volume: ROD_CHARGE_SOUND_VOLUME
+  });
+}
+
+function stopCastingSounds() {
+  for (const soundElement of [rodWhooshSoundElement, castingGruntSoundElement]) {
+    window.AnglerAudio.stop(soundElement);
+  }
+}
+
+function playCastingSounds() {
+  stopCastingSounds();
+  const sounds = [
+    [rodWhooshSoundElement, ROD_WHOOSH_SOUND_VOLUME],
+    [castingGruntSoundElement, CASTING_GRUNT_SOUND_VOLUME]
+  ];
+  for (const [soundElement, volume] of sounds) {
+    window.AnglerAudio.play(soundElement, { loop: false, volume });
+  }
+}
+
+function stopFishHookSound() {
+  window.AnglerAudio.stop(fishHookSoundElement);
+}
+
+function startFishHookSound() {
+  if (!fishHookSoundElement || !FISH_HOOK_SOUND_STATES.includes(game.state)) return;
+  window.AnglerAudio.play(fishHookSoundElement, {
+    loop: true,
+    restart: true,
+    volume: FISH_HOOK_SOUND_VOLUME
+  });
+}
+
+function stopFishingReelSound() {
+  window.AnglerAudio.stop(fishingReelSoundElement);
+}
+
+function startFishingReelSound() {
+  if (!fishingReelSoundElement || !FISHING_REEL_SOUND_STATES.includes(game.state)) return;
+  window.AnglerAudio.play(fishingReelSoundElement, {
+    loop: true,
+    restart: true,
+    volume: FISHING_REEL_SOUND_VOLUME
+  });
+}
+
+function resetLandingSoundElement(soundElement) {
+  window.AnglerAudio.stop(soundElement);
+}
+
+function stopLandingSoundSequence() {
+  resetLandingSoundElement(landingCongratulationsSoundElement);
+  resetLandingSoundElement(landingVictorySoundElement);
+  resetLandingSoundElement(landingWaterSplashSoundElement);
+  resetLandingSoundElement(landingOhYeahSoundElement);
+}
+
+function playLandingVictorySound() {
+  if (!landingVictorySoundElement || !LANDING_SOUND_STATES.includes(game.state)) return;
+  const recoveryToken = audioRecoveryToken;
+  window.AnglerAudio.play(landingVictorySoundElement, {
+    loop: false,
+    restart: true,
+    volume: LANDING_SOUND_VOLUME,
+    onFailure: () => {
+      if (recoveryToken === audioRecoveryToken) playLandingOhYeahSound();
+    }
+  });
+}
+
+function playLandingWaterSplashSound() {
+  if (!landingWaterSplashSoundElement || !LANDING_SOUND_STATES.includes(game.state)) return;
+  window.AnglerAudio.play(landingWaterSplashSoundElement, {
+    loop: false,
+    restart: true,
+    volume: LANDING_WATER_SPLASH_VOLUME
+  });
+}
+
+function playLandingOhYeahSound() {
+  if (!landingOhYeahSoundElement || !LANDING_SOUND_STATES.includes(game.state)) return;
+  window.AnglerAudio.play(landingOhYeahSoundElement, {
+    loop: false,
+    restart: true,
+    volume: LANDING_SOUND_VOLUME
+  });
+}
+
+function playLandingRevealSounds() {
+  if (!LANDING_SOUND_STATES.includes(game.state)) return;
+  stopFishingSceneMusic();
+  playLandingWaterSplashSound();
+  playLandingVictorySound();
+}
+
+function playLandingSoundSequence() {
+  if (!LANDING_SOUND_STATES.includes(game.state)) return;
+  stopLandingSoundSequence();
+  if (!landingCongratulationsSoundElement) {
+    playLandingRevealSounds();
+    return;
+  }
+  const recoveryToken = audioRecoveryToken;
+  window.AnglerAudio.play(landingCongratulationsSoundElement, {
+    loop: false,
+    volume: LANDING_SOUND_VOLUME,
+    onFailure: () => {
+      if (recoveryToken === audioRecoveryToken) playLandingRevealSounds();
+    }
+  });
+}
+
+function getGameAudioElements() {
+  return [
+    beerOpeningSoundElement,
+    drinkingSoundElement,
+    ideaHmmSoundElement,
+    remoteButtonSoundElement,
+    tubeTvOpeningSoundElement,
+    tvStaticNoiseElement,
+    toolboxOpeningSoundElement,
+    toolboxRummagingSoundElement,
+    fishingSceneMusicElement,
+    gentleRainAmbienceElement,
+    thunderstormAmbienceElement,
+    rodChargeSoundElement,
+    rodWhooshSoundElement,
+    castingGruntSoundElement,
+    fishHookSoundElement,
+    fishingReelSoundElement,
+    landingCongratulationsSoundElement,
+    landingVictorySoundElement,
+    landingWaterSplashSoundElement,
+    landingOhYeahSoundElement
+  ];
+}
+
+function stopAllGameAudio(options = {}) {
+  audioRecoveryToken += 1;
+  window.AnglerAudio.stopAll(getGameAudioElements());
+  if (options.includeCover) stopCoverJourneyMusic(true);
+}
+
+function clearCoverJourneyMusicIdleStop() {
+  if (!coverJourneyMusicIdleTimer) return;
+  window.clearTimeout(coverJourneyMusicIdleTimer);
+  coverJourneyMusicIdleTimer = 0;
+}
+
+function scheduleCoverJourneyMusicIdleStop() {
+  clearCoverJourneyMusicIdleStop();
+  if (!coverJourneyMusicElement || coverJourneyMusicElement.paused) return;
+  coverJourneyMusicIdleTimer = window.setTimeout(
+    () => stopCoverJourneyMusic(true),
+    EXHIBITION_IDLE_TIMEOUT
+  );
+}
+
+function startCoverJourneyMusic() {
+  if (!coverJourneyMusicElement) return;
+  coverJourneyMusicFadeToken += 1;
+  if (coverJourneyMusicFadeTimer) window.clearTimeout(coverJourneyMusicFadeTimer);
+  coverJourneyMusicFadeTimer = 0;
+  coverJourneyMusicElement.volume = COVER_JOURNEY_MUSIC_VOLUME;
+  if (!coverJourneyMusicElement.paused) {
+    scheduleCoverJourneyMusicIdleStop();
+    return;
+  }
+  const playAttempt = coverJourneyMusicElement.play();
+  if (playAttempt && typeof playAttempt.then === "function") {
+    playAttempt.then(scheduleCoverJourneyMusicIdleStop).catch(() => {
+      clearCoverJourneyMusicIdleStop();
+    });
+  }
+}
+
+function stopCoverJourneyMusic(shouldRewind = true) {
+  coverJourneyMusicFadeToken += 1;
+  if (coverJourneyMusicFadeTimer) window.clearTimeout(coverJourneyMusicFadeTimer);
+  coverJourneyMusicFadeTimer = 0;
+  clearCoverJourneyMusicIdleStop();
+  if (!coverJourneyMusicElement) return;
+  coverJourneyMusicElement.pause();
+  coverJourneyMusicElement.volume = COVER_JOURNEY_MUSIC_VOLUME;
+  if (!shouldRewind) return;
+  try {
+    coverJourneyMusicElement.currentTime = 0;
+  } catch {
+    // Metadata may not be available yet; the next playback still begins at zero.
+  }
+}
+
+function fadeOutCoverJourneyMusic(durationMs = 1200) {
+  if (!coverJourneyMusicElement || coverJourneyMusicElement.paused) {
+    stopCoverJourneyMusic(true);
+    return;
+  }
+  clearCoverJourneyMusicIdleStop();
+  const token = ++coverJourneyMusicFadeToken;
+  const startedAt = performance.now();
+  const startingVolume = coverJourneyMusicElement.volume;
+  const duration = max(0, Number(durationMs) || 0);
+  coverJourneyMusicFadeTimer = window.setTimeout(
+    () => {
+      if (token === coverJourneyMusicFadeToken) stopCoverJourneyMusic(true);
+    },
+    duration + 100
+  );
+  const step = (now) => {
+    if (token !== coverJourneyMusicFadeToken || !coverJourneyMusicElement) return;
+    const progress = duration > 0 ? min(1, (now - startedAt) / duration) : 1;
+    coverJourneyMusicElement.volume = startingVolume * (1 - progress);
+    if (progress < 1) window.requestAnimationFrame(step);
+    else stopCoverJourneyMusic(true);
+  };
+  window.requestAnimationFrame(step);
+}
+
+function resetExhibitionData(nextState) {
+  window.AnglerAI?.cancelAll?.();
+  stopAllGameAudio({ includeCover: nextState === "cover" });
+  const nextSessionId = game.exhibitionSessionId + 1;
+  Object.assign(game, {
+    state: nextState,
+    stateStarted: millis(),
+    exhibitionSessionId: nextSessionId,
+    exhibitionSessionActive: nextState !== "cover",
+    lastActivityAt: millis(),
+    idleResetAt: 0,
+    charge: 0,
+    castPower: 0,
+    castTarget: { x: 1050, y: 665 },
+    lure: { x: 520, y: 610 },
+    retrieve: 0,
+    biteAt: 0,
+    biteWindow: 0,
+    fishProgress: 0,
+    tension: 0.48,
+    dangerTime: 0,
+    result: null,
+    ripples: [],
+    splashes: [],
+    observation: { x: 1040, y: 650 },
+    shake: 0,
+    flash: 0,
+    runNumber: 1,
+    currentCatch: null,
+    inventory: [],
+    archiveSelected: -1,
+    archivePage: 0,
+    archiveReturnState: "ready",
+    question: "",
+    questionFocused: false,
+    aiRecommendation: null,
+    recommendations: [],
+    recommendationDeck: [],
+    selectedRecommendation: -1,
+    selectedTackleId: null,
+    judgement: null,
+    currentKept: false,
+    targetShadowIndex: 0,
+    lastQuestionEditAt: 0,
+    targetLockAt: 0,
+    tackleSelectAt: 0,
+    weatherIndex: -1,
+    waterIndex: -1,
+    waterSelectAt: 0,
+    waterSelectOrigin: null,
+    currentCast: null,
+    recentCastSignatures: [],
+    textScroll: {},
+    inventoryFullAt: 0,
+    skipHoldStartedAt: 0,
+    skipConsumed: false,
+    questionFocusAfterSpaceRelease: false,
+    questionBeforeCutsceneSkip: "",
+    drinkingSoundPlayed: false,
+    remoteButtonSoundPressIndex: 0,
+    ideaHmmSoundPrestarted: false,
+    tubeTvOpeningSoundPrestarted: false
+  });
+  previewImpactTime = null;
+  previewAnglerState = null;
+  syncQuestionInputValue();
+  setQuestionFocus(false);
+  updateAccessibleStatus();
+}
+
+function beginExhibitionSession() {
+  resetExhibitionData("introDrink");
+  playBeerOpeningSound();
+  document.querySelector("#canvasWrap canvas")?.focus();
+}
+
+function openHowToPage() {
+  if (game.state !== "cover") return;
+  howToPageIndex = 0;
+  for (let index = 1; index < HOW_TO_PAGE_PATHS.length; index += 1) ensureHowToPage(index);
+  game.state = "howTo";
+  game.stateStarted = millis();
+  updateAccessibleStatus();
+}
+
+function changeHowToPage(direction) {
+  if (game.state !== "howTo") return;
+  const nextPage = howToPageIndex + direction;
+  if (nextPage < 0) return;
+  if (nextPage >= howToPages.length) {
+    closeHowToPage();
+    return;
+  }
+  ensureHowToPage(nextPage);
+  ensureHowToPage(nextPage + 1);
+  howToPageIndex = nextPage;
+  updateAccessibleStatus();
+}
+
+function ensureHowToPage(index) {
+  if (index < 0 || index >= HOW_TO_PAGE_PATHS.length) return;
+  if (howToPages[index] || howToPageLoadStates[index] === "loading") return;
+  howToPageLoadStates[index] = "loading";
+  loadImage(
+    HOW_TO_PAGE_PATHS[index],
+    (loadedPage) => {
+      howToPages[index] = loadedPage;
+      howToPageLoadStates[index] = "ready";
+    },
+    () => {
+      howToPageLoadStates[index] = "error";
+    }
+  );
+}
+
+function closeHowToPage() {
+  if (game.state !== "howTo") return;
+  game.state = "cover";
+  game.stateStarted = millis();
+  updateAccessibleStatus();
+  document.querySelector("#canvasWrap canvas")?.focus();
+}
+
+function returnToExhibitionCover() {
+  try {
+    resetExhibitionData("cover");
+    if (game.state !== "cover") throw new Error("Soft reset did not reach the cover.");
+    window.setTimeout(() => {
+      if (game.state !== "cover" && !game.exhibitionSessionActive) window.location.reload();
+    }, 1200);
+  } catch (error) {
+    console.error("Exhibition reset failed; reloading the page.", error);
+    window.location.reload();
+  }
+}
+
+function goHome() {
+  window.AnglerAI?.cancelAll?.();
+  stopAllGameAudio({ includeCover: true });
+  window.location.assign(window.AnglerGameFlow.getHomePathname(window.location));
+}
+
+function updateExhibitionIdle(now) {
+  if (!game.exhibitionSessionActive || game.idleResetAt > 0) return;
+  const requestedTimeout = Number(new URLSearchParams(window.location.search).get("exhibitionIdleMs"));
+  const idleTimeout = Number.isFinite(requestedTimeout) && requestedTimeout >= 1000
+    ? min(requestedTimeout, EXHIBITION_IDLE_TIMEOUT)
+    : EXHIBITION_IDLE_TIMEOUT;
+  if (now - game.lastActivityAt < idleTimeout) return;
+  game.idleResetAt = now;
+  returnToExhibitionCover();
+}
+
+function setupNativeQuestionInput() {
+  questionInputElement = document.getElementById("questionInput");
+  if (!questionInputElement) return;
+  questionInputElement.maxLength = QUESTION_MAX_LENGTH;
+  questionInputElement.addEventListener("input", () => {
+    if (!["question", "livingQuestion"].includes(game.state)) return;
+    if (game.questionFocusAfterSpaceRelease) {
+      questionInputElement.value = game.questionBeforeCutsceneSkip;
+      return;
+    }
+    game.question = questionInputElement.value.slice(0, QUESTION_MAX_LENGTH);
+    noteQuestionEdit();
+  });
+  questionInputElement.addEventListener("focus", () => {
+    if (["question", "livingQuestion"].includes(game.state)) game.questionFocused = true;
+  });
+  questionInputElement.addEventListener("blur", () => {
+    game.questionFocused = false;
+  });
+  questionInputElement.addEventListener("keydown", (event) => {
+    event.stopPropagation();
+    if (event.key === " " && game.questionFocusAfterSpaceRelease) {
+      event.preventDefault();
+      return;
+    }
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      confirmQuestion();
+    } else if (event.key === "Escape") {
+      event.preventDefault();
+      setQuestionFocus(false);
+    }
+  });
+}
+
+function syncQuestionInputValue(moveCaretToEnd = false) {
+  if (!questionInputElement) return;
+  const nextValue = String(game.question || "").slice(0, QUESTION_MAX_LENGTH);
+  if (questionInputElement.value !== nextValue) questionInputElement.value = nextValue;
+  if (moveCaretToEnd && document.activeElement === questionInputElement) {
+    questionInputElement.setSelectionRange(nextValue.length, nextValue.length);
+  }
+}
+
+function syncQuestionInputState() {
+  syncQuestionInputValue();
+  const shouldFocus = ["question", "livingQuestion"].includes(game.state) && game.questionFocused;
+  if (shouldFocus) {
+    requestAnimationFrame(() => setQuestionFocus(true));
+  } else if (document.activeElement === questionInputElement) {
+    questionInputElement.blur();
+  }
+}
+
+function setQuestionFocus(focused) {
+  game.questionFocused = Boolean(focused);
+  if (!questionInputElement) return;
+  if (focused && ["question", "livingQuestion"].includes(game.state)) {
+    syncQuestionInputValue();
+    questionInputElement.focus({ preventScroll: true });
+    const length = questionInputElement.value.length;
+    questionInputElement.setSelectionRange(length, length);
+  } else {
+    questionInputElement.blur();
+    document.querySelector("#canvasWrap canvas")?.focus();
+  }
+}
+
+function cleanDynamicDisplayText(value) {
+  return String(value || "")
+    .replace(/\[([^\]]+)\]\(https?:\/\/[^)]+\)/gi, "$1")
+    .replace(/https?:\/\/\S+/gi, "")
+    .replace(/\*\*|__|`/g, "")
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+// Generated from public/fonts/RetroSans.ttf's Unicode cmap. Any character
+// outside these ranges is rendered with the supplemental Chinese font, so
+// currency marks, mathematical symbols and future non-Latin input do not
+// become missing-glyph boxes.
+const RETRO_SANS_CODEPOINT_RANGES = [
+  [0x20, 0x2a], [0x2c, 0x3b], [0x3f, 0x7a], [0x7c, 0x7c], [0x7e, 0x7e],
+  [0xa0, 0xa0], [0xaa, 0xab], [0xad, 0xad], [0xaf, 0xb0], [0xb4, 0xb5],
+  [0xb7, 0xb7], [0xb9, 0xbb], [0x2dc, 0x2dd], [0x37e, 0x37e], [0x386, 0x386],
+  [0x388, 0x38a], [0x38c, 0x38c], [0x38e, 0x38f], [0x391, 0x3a1], [0x3a3, 0x3ce],
+  [0x2013, 0x2014], [0x2018, 0x201a], [0x201c, 0x201e], [0x2026, 0x2026],
+  [0x20ac, 0x20ac], [0x2116, 0x2116], [0x2122, 0x2122], [0x2202, 0x2202],
+  [0x2206, 0x2206], [0x2212, 0x2212], [0x2219, 0x2219], [0xf001, 0xf002],
+  [0xfb01, 0xfb02]
+];
+
+function retroSansSupportsCharacter(character) {
+  const codepoint = String(character || "").codePointAt(0);
+  if (!Number.isFinite(codepoint)) return true;
+  return RETRO_SANS_CODEPOINT_RANGES.some(([start, end]) => codepoint >= start && codepoint <= end);
+}
+
+function usesCjkUiFont(character) {
+  return !retroSansSupportsCharacter(character);
+}
+
+function splitUiFontRuns(value) {
+  const runs = [];
+  for (const character of String(value || "")) {
+    const supplemental = usesCjkUiFont(character);
+    const lastRun = runs[runs.length - 1];
+    if (lastRun && lastRun.supplemental === supplemental) lastRun.text += character;
+    else runs.push({ text: character, supplemental });
+  }
+  return runs;
+}
+
+function measureMixedUiText(value) {
+  let width = 0;
+  for (const run of splitUiFontRuns(value)) {
+    textFont(run.supplemental && cjkUiFont ? cjkUiFont : uiFont);
+    width += textWidth(run.text);
+  }
+  textFont(uiFont);
+  return width;
+}
+
+function drawMixedUiText(value, x, y) {
+  let cursorX = x;
+  for (const run of splitUiFontRuns(value)) {
+    textFont(run.supplemental && cjkUiFont ? cjkUiFont : uiFont);
+    text(run.text, cursorX, y);
+    cursorX += textWidth(run.text);
+  }
+  textFont(uiFont);
+  return cursorX;
+}
+
+function wrapTextLines(value, maxWidth) {
+  const source = String(value || "");
+  const result = [];
+  for (const paragraph of source.split("\n")) {
+    if (!paragraph) {
+      result.push("");
+      continue;
+    }
+    let line = "";
+    const tokens = paragraph.split(/(\s+)/).filter(Boolean);
+    for (const token of tokens) {
+      const candidate = line + token;
+      if (measureMixedUiText(candidate) <= maxWidth) {
+        line = candidate;
+        continue;
+      }
+      if (line.trim()) {
+        result.push(line.trimEnd());
+        line = "";
+      }
+      if (measureMixedUiText(token) <= maxWidth) {
+        line = token.trimStart();
+        continue;
+      }
+      let fragment = "";
+      for (const character of token) {
+        if (fragment && measureMixedUiText(fragment + character) > maxWidth) {
+          result.push(fragment);
+          fragment = character;
+        } else {
+          fragment += character;
+        }
+      }
+      line = fragment;
+    }
+    result.push(line.trimEnd());
+  }
+  return result.length ? result : [""];
+}
+
+function drawScrollableTextBlock(value, bounds, scrollKey, options = {}) {
+  const fontSize = options.fontSize || 24;
+  const lineHeight = options.lineHeight || round(fontSize * 1.32);
+  const colour = options.colour || "#F0E6C8";
+  const content = options.sanitise === false ? String(value || "") : cleanDynamicDisplayText(value);
+  const horizontalPadding = options.horizontalPadding || 0;
+  const drawBounds = {
+    x: bounds.x + horizontalPadding,
+    y: bounds.y,
+    w: bounds.w - horizontalPadding * 2,
+    h: bounds.h
+  };
+
+  push();
+  textFont(uiFont);
+  textStyle(options.bold ? BOLD : NORMAL);
+  textSize(fontSize);
+  textAlign(LEFT, TOP);
+  textWrap(WORD);
+  const lines = wrapTextLines(content, max(1, drawBounds.w - 14));
+  const totalHeight = lines.length * lineHeight;
+  const maxScroll = max(0, totalHeight - drawBounds.h);
+  const verticalOffset = options.verticalAlign === "center" && maxScroll === 0
+    ? max(0, (drawBounds.h - totalHeight) / 2)
+    : 0;
+  if (!Number.isFinite(game.textScroll[scrollKey])) game.textScroll[scrollKey] = 0;
+  if (options.followEnd && millis() - game.lastQuestionEditAt < 320) game.textScroll[scrollKey] = maxScroll;
+  game.textScroll[scrollKey] = constrain(game.textScroll[scrollKey], 0, maxScroll);
+  const offset = game.textScroll[scrollKey];
+
+  drawingContext.save();
+  drawingContext.beginPath();
+  drawingContext.rect(drawBounds.x, drawBounds.y, drawBounds.w, drawBounds.h);
+  drawingContext.clip();
+  fill(colour);
+  noStroke();
+  for (let index = 0; index < lines.length; index += 1) {
+    const lineY = drawBounds.y + verticalOffset + index * lineHeight - offset;
+    if (lineY < drawBounds.y || lineY + lineHeight > drawBounds.y + drawBounds.h) continue;
+    drawMixedUiText(lines[index], drawBounds.x, lineY);
+  }
+  drawingContext.restore();
+
+  const hovered = pointInRect(mouseX, mouseY, drawBounds);
+  activeScrollRegions.push({ key: scrollKey, bounds: drawBounds, maxScroll, step: lineHeight * 2 });
+  if (maxScroll > 0 && hovered) {
+    const railX = drawBounds.x + drawBounds.w - 7;
+    const thumbHeight = max(24, drawBounds.h * (drawBounds.h / totalHeight));
+    const thumbY = drawBounds.y + (drawBounds.h - thumbHeight) * (offset / maxScroll);
+    noStroke();
+    fill(8, 5, 12, 180);
+    rect(railX, drawBounds.y, 6, drawBounds.h, 3);
+    fill(options.scrollColour || "#5DD4C8");
+    rect(railX, thumbY, 6, thumbHeight, 3);
+  }
+  pop();
+  return { maxScroll, lines, totalHeight };
+}
+
+function resetTextScroll(...keys) {
+  for (const keyName of keys) game.textScroll[keyName] = 0;
+}
+
+function resetArchiveTextScroll() {
+  resetTextScroll("archiveQuestion", "archiveAnswer", "archiveRecord");
 }
 
 function applyPreviewState() {
@@ -907,6 +2048,9 @@ function applyPreviewState() {
   const preview = parameters.get("preview");
   if (!preview) return;
   game.question = EXAMPLE_QUESTION;
+  const previewQuestion = parameters.get("question");
+  if (previewQuestion) game.question = previewQuestion.slice(0, QUESTION_MAX_LENGTH);
+  game.aiRecommendation = buildLocalRecommendation(game.question);
   game.selectedTackleId = TACKLE_PROFILES[0].id;
   if (preview === "angler") {
     const requestedLocation = parameters.get("location") || "daylight-river";
@@ -921,6 +2065,7 @@ function applyPreviewState() {
     game.tension = 0.5;
   } else if (preview === "question") {
     game.question = "";
+    game.aiRecommendation = null;
     game.questionFocused = true;
     game.state = "livingQuestion";
     game.stateStarted = millis();
@@ -943,19 +2088,68 @@ function applyPreviewState() {
     const requestedId = parameters.get("catch") || "trout";
     const requestedLocation = parameters.get("location") || "daylight-river";
     game.currentCatch = CATCHES.find((item) => item.id === requestedId) || CATCHES[0];
+    const previewAnswer = parameters.get("answer");
+    if (previewAnswer) {
+      game.currentCatch = {
+        ...game.currentCatch,
+        candidate: previewAnswer.slice(0, 12_000),
+        requiresGeneration: false,
+        aiStatus: "openai"
+      };
+    }
     game.result = ["weeds", "rubbish", "boot"].includes(game.currentCatch.id) ? "weeds" : "fish";
     game.waterIndex = max(0, WATER_LOCATIONS.findIndex((location) => location.id === requestedLocation));
     game.state = "result";
     game.stateStarted = millis();
-  } else if (preview === "archive") {
-    game.inventory = CATCHES.map((item, index) => ({
-      id: item.id,
-      tackleId: TACKLE_PROFILES[index % TACKLE_PROFILES.length].id,
-      question: EXAMPLE_QUESTION,
+  } else if (preview === "awaiting-answer") {
+    game.currentCast = createCastRecord();
+    game.currentCast.aiStatus = "ai-pending";
+    game.currentCatch = buildRuntimeCatch(game.currentCast);
+    game.result = game.currentCatch.id;
+    game.waterIndex = 0;
+    game.state = "awaitingAnswer";
+    game.stateStarted = millis();
+  } else if (preview === "backpack-full") {
+    game.currentCast = createCastRecord();
+    game.currentCast.aiStatus = "fallback";
+    game.currentCatch = buildRuntimeCatch(game.currentCast);
+    game.result = game.currentCatch.id;
+    game.waterIndex = 0;
+    game.inventory = Array.from({ length: ARCHIVE_MAX_CATCHES }, (_, index) => ({
+      id: CATCHES[index % CATCHES.length].id,
       cast: index + 1,
       savedAt: "12:00"
     }));
+    game.inventoryFullAt = millis();
+    game.state = "result";
+    game.stateStarted = millis();
+  } else if (["archive", "archive-empty", "archive-full-long"].includes(preview)) {
+    const countParameter = parameters.get("count");
+    const parsedCount = Number(countParameter);
+    const requestedCount = preview === "archive-empty"
+      ? 0
+      : preview === "archive-full-long"
+        ? ARCHIVE_MAX_CATCHES
+        : countParameter !== null && Number.isFinite(parsedCount)
+          ? constrain(parsedCount, 0, ARCHIVE_MAX_CATCHES)
+          : CATCHES.length;
+    const useLongArchiveText = preview === "archive-full-long" || parameters.get("long") === "1";
+    game.inventory = Array.from({ length: requestedCount }, (_, index) => {
+      const item = CATCHES[index % CATCHES.length];
+      const previewAnswer = `${item.candidate} ${index % 2 === 0 ? "This preview entry deliberately includes enough additional context to verify the archive text scrolling area." : ""}`;
+      return {
+        id: item.id,
+        tackleId: TACKLE_PROFILES[index % TACKLE_PROFILES.length].id,
+        question: index % 3 === 0
+          ? `${EXAMPLE_QUESTION} Please include practical timing, access and alternatives for a first-time visitor.`
+          : EXAMPLE_QUESTION,
+        answer: useLongArchiveText ? Array(12).fill(previewAnswer).join(" ") : previewAnswer,
+        cast: index + 1,
+        savedAt: "12:00"
+      };
+    });
     game.archiveSelected = 0;
+    game.archivePage = 0;
     game.archiveReturnState = "ready";
     game.state = "archive";
     game.stateStarted = millis();
@@ -966,9 +2160,11 @@ function applyPreviewState() {
     game.tackleSelectAt = millis();
     game.state = "tackle";
     game.stateStarted = millis();
+    startToolboxRummagingSound();
   } else if (preview === "toolbox" || preview === "toolbox-intro") {
     game.state = "toolboxIntro";
     game.stateStarted = millis();
+    playToolboxOpeningSound();
   } else if (preview === "drink") {
     game.question = "";
     game.state = "introDrink";
@@ -977,22 +2173,27 @@ function applyPreviewState() {
     game.question = "";
     game.state = "introIdea";
     game.stateStarted = millis();
+    playIdeaHmmSound();
   } else if (preview === "remote") {
     game.state = "introRemote";
     game.stateStarted = millis();
   } else if (preview === "tv") {
     game.state = "introTv";
     game.stateStarted = millis();
+    playTubeTvOpeningSound();
+    startTvStaticNoise();
   } else if (preview === "weather") {
     game.weatherIndex = 0;
     game.state = "weather";
     game.stateStarted = millis();
+    startTvStaticNoise();
   } else if (preview === "water" || preview === "water-select") {
     const requestedLocation = parameters.get("location");
     game.waterIndex = WATER_LOCATIONS.findIndex((location) => location.id === requestedLocation);
     game.waterSelectAt = game.waterIndex >= 0 ? millis() : 0;
     game.state = "waterSelect";
     game.stateStarted = millis();
+    startTvStaticNoise();
   } else if (["fishing", "ready", "rain", "storm"].includes(preview)) {
     const requestedLocation = parameters.get("location") || "daylight-river";
     const requestedWeather = parameters.get("weather") || (preview === "storm" ? "storm" : preview === "rain" ? "rain" : "sunny");
@@ -1009,6 +2210,18 @@ function draw() {
   const now = millis();
   const dt = constrain((now - lastFrameTime) / 1000, 0, 0.05);
   lastFrameTime = now;
+  activeScrollRegions = [];
+  syncExhibitionStartButtonOverlay();
+
+  updateExhibitionIdle(now);
+  if (game.state === "cover") {
+    drawExhibitionCover();
+    return;
+  }
+  if (game.state === "howTo") {
+    drawHowToPage();
+    return;
+  }
 
   updateCutsceneSkip(now);
   updateGame(dt);
@@ -1037,11 +2250,186 @@ function draw() {
   game.flash = max(0, game.flash - dt * 2.8);
 }
 
+function drawExhibitionCover() {
+  image(exhibitionCover, 0, 0, W, H);
+  const hovered = exhibitionStartButtonHovered || pointInRect(mouseX, mouseY, EXHIBITION_START_BUTTON);
+  const buttonFrame = resultDecisionFramesV3.keep[hovered ? "hover" : "default"];
+  image(
+    buttonFrame,
+    EXHIBITION_START_BUTTON.x,
+    EXHIBITION_START_BUTTON.y,
+    EXHIBITION_START_BUTTON.w,
+    EXHIBITION_START_BUTTON.h
+  );
+
+  const centerX = EXHIBITION_START_BUTTON.x + EXHIBITION_START_BUTTON.w * 0.5;
+  fill(hovered ? "#F02B91" : "#F0E6C8");
+  textAlign(CENTER, CENTER);
+  textStyle(BOLD);
+  textSize(25);
+  text(
+    "START EXPERIENCE",
+    centerX,
+    EXHIBITION_START_BUTTON.y + EXHIBITION_START_BUTTON.h * 0.5
+  );
+
+  const howToHovered = exhibitionHowToButtonHovered || pointInRect(mouseX, mouseY, EXHIBITION_HOW_TO_BUTTON);
+  const howToFrame = resultDecisionFramesV3.release[howToHovered ? "hover" : "default"];
+  image(
+    howToFrame,
+    EXHIBITION_HOW_TO_BUTTON.x,
+    EXHIBITION_HOW_TO_BUTTON.y,
+    EXHIBITION_HOW_TO_BUTTON.w,
+    EXHIBITION_HOW_TO_BUTTON.h
+  );
+  fill(howToHovered ? "#59D0CD" : "#F0E6C8");
+  textSize(20);
+  text(
+    "HOW TO PLAY",
+    EXHIBITION_HOW_TO_BUTTON.x + EXHIBITION_HOW_TO_BUTTON.w * 0.5,
+    EXHIBITION_HOW_TO_BUTTON.y + EXHIBITION_HOW_TO_BUTTON.h * 0.5
+  );
+  textAlign(LEFT, BASELINE);
+}
+
+function drawHowToEnglishCaption(heading, detail, bounds, detailSize = 21) {
+  push();
+  textAlign(CENTER, CENTER);
+  textStyle(BOLD);
+  textFont(uiFont);
+  fill("#17131C");
+  const x = bounds.x + bounds.w * 0.5;
+  const centerY = bounds.y + bounds.h * 0.5;
+  const headingSize = 25;
+  const headingGap = detail ? 13 : 0;
+  const detailLines = detail ? String(detail).split("\n") : [];
+  const detailLineHeight = detailSize + 6;
+  const groupHeight = headingSize + headingGap + detailLines.length * detailLineHeight;
+  const headingY = centerY - groupHeight * 0.5 + headingSize * 0.5;
+  textSize(headingSize);
+  text(heading, x, headingY);
+  fill("#17131C");
+  textStyle(NORMAL);
+  textSize(detailSize);
+  for (let index = 0; index < detailLines.length; index += 1) {
+    const lineY = headingY + headingSize * 0.5 + headingGap + detailLineHeight * (index + 0.5);
+    text(detailLines[index], x, lineY);
+  }
+  pop();
+}
+
+function drawHowToPage() {
+  const page = howToPages[howToPageIndex];
+  const captionBoxes = HOW_TO_CAPTION_BOUNDS[howToPageIndex];
+  if (page) {
+    drawImageContained(page, { x: 0, y: 0, w: W, h: H });
+  } else {
+    background("#100A14");
+    fill("#F0E6C8");
+    textAlign(CENTER, CENTER);
+    textStyle(BOLD);
+    textSize(26);
+    text("LOADING INSTRUCTIONS...", W * 0.5, H * 0.5);
+  }
+
+  push();
+  textAlign(CENTER, CENTER);
+  textStyle(BOLD);
+  textFont(uiFont);
+  fill("#17131C");
+  textSize(40);
+
+  if (howToPageIndex === 0) {
+    text("THE IDEA", W * 0.5, 112);
+    textStyle(NORMAL);
+    textSize(21);
+    text("EVERY CAST IS A NEW AI RESPONSE.", W * 0.5, 158);
+    drawHowToEnglishCaption("ASK A QUESTION", "START WITH SOMETHING\nYOU ACTUALLY WANT TO KNOW.", captionBoxes[0], 18);
+    drawHowToEnglishCaption("CAST IT INTO THE WATER", "EACH CAST SENDS THE QUESTION\nFOR A NEW AI RESPONSE.", captionBoxes[1], 18);
+    drawHowToEnglishCaption("CATCH A RESPONSE", "ANSWERS CAN DIFFER.\nYOU DECIDE WHAT IS USEFUL.", captionBoxes[2], 18);
+  } else if (howToPageIndex === 1) {
+    text("CHOOSE HOW AI ANSWERS", W * 0.5, 112);
+    textStyle(NORMAL);
+    textSize(20);
+    text("THE WATER CHANGES THE APPROACH, NOT THE QUESTION.", W * 0.5, 154);
+    drawHowToEnglishCaption("RIVER", "DIRECT, GENERAL AND CLEAR.\nGOOD FOR A QUICK START.", captionBoxes[0], 18);
+    drawHowToEnglishCaption("CANAL", "SEARCHES ONLINE SOURCES,\nOFFICIAL PAGES AND FORUMS.", captionBoxes[1], 18);
+    drawHowToEnglishCaption("RESERVOIR", "COMPARES ROUTES, TRADE-OFFS\nAND COMPLEX OPTIONS.", captionBoxes[2], 18);
+  } else if (howToPageIndex === 2) {
+    text("SHAPE THE QUESTION", W * 0.5, 110);
+    textStyle(NORMAL);
+    textSize(20);
+    text("LURES ADD EXTRA INSTRUCTIONS TO THE SAME QUESTION.", W * 0.5, 154);
+    drawHowToEnglishCaption("CLARIFY", "MAKE THE RESPONSE\nSIMPLER AND CLEARER.", captionBoxes[0], 18);
+    drawHowToEnglishCaption("ADD CONTEXT", "ADD YOUR SITUATION,\nGOALS OR CONSTRAINTS.", captionBoxes[1], 18);
+    drawHowToEnglishCaption("ASK FOR EVIDENCE", "REQUEST SOURCES,\nEXAMPLES OR SUPPORT.", captionBoxes[2], 18);
+  } else if (howToPageIndex === 3) {
+    text("FISHING CONDITIONS", W * 0.5, 108);
+    textStyle(NORMAL);
+    textSize(20);
+    text("WEATHER CHANGES THE FISHING — NOT THE QUESTION.", W * 0.5, 152);
+    drawHowToEnglishCaption("CLEAR", "SHORTER WAIT.\nCLEANER CATCHES.", captionBoxes[0], 18);
+    drawHowToEnglishCaption("RAIN", "MORE WAIT AND LINE CONTROL.\nSMALL CATCHES ARE MORE LIKELY.", captionBoxes[1], 17);
+    drawHowToEnglishCaption("STORM", "LONGER WAIT. CONFUSED\nCATCHES ARE MORE LIKELY.", captionBoxes[2], 17);
+    textStyle(BOLD);
+    textSize(18);
+    fill("#17131C");
+    text("HOLD", 520, 925);
+    text("RELEASE", 960, 925);
+    text("CLICK TO SET THE HOOK", 1400, 925);
+  } else {
+    text("JUDGE THE CATCH", W * 0.5, 108);
+    textStyle(NORMAL);
+    textSize(20);
+    text("SIZE DOES NOT GUARANTEE QUALITY. READ THE RESPONSE AND DECIDE.", W * 0.5, 152);
+    drawHowToEnglishCaption("FULL RESPONSE", "DEVELOPED AND USEFUL.\nCHECK IT BEFORE YOU TRUST IT.", captionBoxes[0], 16);
+    drawHowToEnglishCaption("MINIMAL RESPONSE", "VERY BRIEF. IT MAY HELP,\nOR IT MAY MISS TOO MUCH.", captionBoxes[1], 16);
+    drawHowToEnglishCaption("CONFUSED RESPONSE", "TANGLED, CONTRADICTORY\nOR OFF TARGET.", captionBoxes[2], 16);
+    drawHowToEnglishCaption("KEEP OR RELEASE", "SAVE USEFUL CATCHES, RELEASE\nTHE REST, OR CAST AGAIN.", captionBoxes[3], 16);
+  }
+  pop();
+
+  const previousEnabled = howToPageIndex > 0;
+  const prevHovered = previousEnabled && (howToPrevButtonHovered || pointInRect(mouseX, mouseY, HOW_TO_PREV_BUTTON));
+  const nextHovered = howToNextButtonHovered || pointInRect(mouseX, mouseY, HOW_TO_NEXT_BUTTON);
+  push();
+  if (previousEnabled) {
+    image(resultDecisionFramesV3.release[prevHovered ? "hover" : "default"], HOW_TO_PREV_BUTTON.x, HOW_TO_PREV_BUTTON.y, HOW_TO_PREV_BUTTON.w, HOW_TO_PREV_BUTTON.h);
+    fill(prevHovered ? "#59D0CD" : "#F0E6C8");
+    textAlign(CENTER, CENTER);
+    textStyle(BOLD);
+    textSize(18);
+    text("PREVIOUS", HOW_TO_PREV_BUTTON.x + HOW_TO_PREV_BUTTON.w * 0.5, HOW_TO_PREV_BUTTON.y + HOW_TO_PREV_BUTTON.h * 0.5);
+  }
+  image(resultDecisionFramesV3.keep[nextHovered ? "hover" : "default"], HOW_TO_NEXT_BUTTON.x, HOW_TO_NEXT_BUTTON.y, HOW_TO_NEXT_BUTTON.w, HOW_TO_NEXT_BUTTON.h);
+  fill(nextHovered ? "#F02B91" : "#F0E6C8");
+  textAlign(CENTER, CENTER);
+  textStyle(BOLD);
+  textSize(18);
+  text(howToPageIndex === howToPages.length - 1 ? "BACK TO COVER" : "NEXT", HOW_TO_NEXT_BUTTON.x + HOW_TO_NEXT_BUTTON.w * 0.5, HOW_TO_NEXT_BUTTON.y + HOW_TO_NEXT_BUTTON.h * 0.5);
+  pop();
+
+  if (howToCloseButtonHovered) {
+    push();
+    noFill();
+    stroke("#59D0CD");
+    strokeWeight(5);
+    ellipse(1794, 123, 142, 142);
+    pop();
+  }
+}
+
 function updateCutsceneSkip(now) {
   const isHoldingSpace = keyIsDown(32);
-  const targetState = CUTSCENE_GROUPS[game.state];
+  const targetState = window.AnglerGameFlow.getSkipTarget(game.state);
 
   if (!isHoldingSpace) {
+    if (game.questionFocusAfterSpaceRelease && game.state === "livingQuestion") {
+      game.question = game.questionBeforeCutsceneSkip;
+      syncQuestionInputValue();
+      game.questionFocusAfterSpaceRelease = false;
+      setQuestionFocus(true);
+    }
     game.skipHoldStartedAt = 0;
     game.skipConsumed = false;
     return;
@@ -1053,10 +2441,17 @@ function updateCutsceneSkip(now) {
   game.skipConsumed = true;
   game.skipHoldStartedAt = 0;
   if (targetState === "livingQuestion") {
-    game.questionFocused = true;
+    // Do not focus the native textarea while Space is still held. Otherwise
+    // browser key-repeat inserts the skip key into the player's question.
+    game.questionFocused = false;
+    game.questionFocusAfterSpaceRelease = true;
+    game.questionBeforeCutsceneSkip = game.question;
   } else if (targetState === "tackle") {
     game.recommendationDeck = [];
     refreshRecommendations();
+  } else if (game.state === "impact" && targetState === "result") {
+    finishLandingTransition();
+    return;
   }
   setState(targetState);
 }
@@ -1093,9 +2488,24 @@ function updateGame(dt) {
   }
   const elapsed = millis() - game.stateStarted;
 
-  if (game.state === "introDrink" && elapsed >= 7800) {
-    setState("introIdea");
-    return;
+  if (game.state === "introDrink") {
+    const drinkingSoundStillPlaying = drinkingSoundElement
+      && !drinkingSoundElement.paused
+      && !drinkingSoundElement.ended;
+    const animationRemaining = max(0, INTRO_DRINK_TOTAL_DURATION - elapsed);
+    const drinkingSoundRemaining = drinkingSoundStillPlaying
+      && Number.isFinite(drinkingSoundElement.duration)
+      ? max(0, (drinkingSoundElement.duration - drinkingSoundElement.currentTime) * 1000)
+      : 0;
+    const timeUntilIdea = max(animationRemaining, drinkingSoundRemaining);
+    if (!game.ideaHmmSoundPrestarted && timeUntilIdea <= IDEA_HMMM_SOUND_LEAD) {
+      game.ideaHmmSoundPrestarted = true;
+      playIdeaHmmSound();
+    }
+    if (elapsed >= INTRO_DRINK_TOTAL_DURATION && !drinkingSoundStillPlaying) {
+      setState("introIdea");
+      return;
+    }
   }
 
   if (game.state === "introIdea" && elapsed >= 1450) {
@@ -1110,9 +2520,15 @@ function updateGame(dt) {
     return;
   }
 
-  if (game.state === "introRemote" && elapsed >= 5800) {
-    setState("introTv");
-    return;
+  if (game.state === "introRemote") {
+    if (!game.tubeTvOpeningSoundPrestarted && elapsed >= 5800 - TUBE_TV_OPENING_SOUND_LEAD) {
+      game.tubeTvOpeningSoundPrestarted = true;
+      playTubeTvOpeningSound();
+    }
+    if (elapsed >= 5800) {
+      setState("introTv");
+      return;
+    }
   }
 
   if (game.state === "introTv" && elapsed >= TV_CAMERA.zoomDuration) {
@@ -1133,7 +2549,7 @@ function updateGame(dt) {
   }
 
   if (game.state === "impact" && previewImpactTime === null && elapsed >= HOOKED_TRANSITION_DURATION) {
-    setState("result");
+    finishLandingTransition();
   }
 
   if (game.state === "charging") {
@@ -1145,7 +2561,8 @@ function updateGame(dt) {
     game.lure.y = game.castTarget.y;
     addRipple(game.lure.x, game.lure.y, C.paper, 150);
     addSplash(game.lure.x, game.lure.y, 15);
-    game.biteAt = random(2.5, 5.2);
+    const difficulty = getActiveWeatherGameplay();
+    game.biteAt = random(difficulty.biteDelay[0], difficulty.biteDelay[1]);
     setState("waiting");
   }
 
@@ -1158,40 +2575,50 @@ function updateGame(dt) {
     }
 
     const activeTime = elapsed / 1000 + game.retrieve * 1.8;
-    if (activeTime > game.biteAt) beginBite();
+    if (activeTime > game.biteAt && isCastAnswerReady(game.currentCast)) beginBite();
+    else if (game.currentCast?.aiStatus === "ai-error") finishRun("signal");
     else if (game.retrieve >= 0.985) finishRun("empty");
   }
 
   if (game.state === "bite") {
+    const difficulty = getActiveWeatherGameplay();
     game.biteWindow -= dt;
-    if (frameCount % 7 === 0) addRipple(game.lure.x, game.lure.y, C.yellow, random(82, 155));
+    const rippleCadence = max(5, round(9 - difficulty.cueStrength * 2));
+    if (frameCount % rippleCadence === 0) {
+      addRipple(game.lure.x, game.lure.y, C.yellow, random(76, 145) * difficulty.cueStrength);
+    }
     if (game.biteWindow <= 0) finishRun("missed");
   }
 
   if (game.state === "hooked") {
-    const pull = mouseIsPressed ? 0.2 : -0.12;
-    const fishSurge = sin(millis() * 0.005) * 0.055 + noise(millis() * 0.001) * 0.045;
+    const difficulty = getActiveWeatherGameplay();
+    const pull = mouseIsPressed ? difficulty.pullRate : difficulty.releaseRate;
+    const fishSurge = sin(millis() * difficulty.surgeSpeed) * difficulty.surgeWave
+      + noise(millis() * 0.001) * difficulty.surgeNoise;
     game.tension = constrain(game.tension + (pull + fishSurge) * dt, 0, 1);
 
-    const inControl = game.tension > 0.25 && game.tension < 0.82;
+    const inControl = game.tension > difficulty.controlMin && game.tension < difficulty.controlMax;
     if (inControl) {
-      game.fishProgress = min(1, game.fishProgress + dt * (0.16 + game.tension * 0.06));
+      game.fishProgress = min(
+        1,
+        game.fishProgress + dt * (difficulty.progressBase + game.tension * difficulty.progressTension)
+      );
       game.dangerTime = max(0, game.dangerTime - dt * 0.8);
     } else {
       game.dangerTime += dt;
-      game.fishProgress = max(0, game.fishProgress - dt * 0.025);
+      game.fishProgress = max(0, game.fishProgress - dt * difficulty.progressLoss);
     }
 
-    const direction = sin(millis() * 0.0021) * 250;
+    const direction = sin(millis() * difficulty.fishTravelSpeed) * difficulty.fishTravel;
     const fishY = game.castTarget.y + sin(millis() * 0.007) * 28;
     const safeFish = clampFishCenter(game.castTarget.x + direction, fishY + 54);
     const safeLure = clampLureForFish(safeFish.x, safeFish.y - 54);
     game.lure.x = lerp(safeLure.x, 950, game.fishProgress);
     game.lure.y = lerp(safeLure.y, 740, game.fishProgress);
-    if (frameCount % 11 === 0) addSplash(game.lure.x, game.lure.y, 5);
+    if (frameCount % difficulty.splashCadence === 0) addSplash(game.lure.x, game.lure.y, 5);
 
-    if (game.tension >= 0.985 && game.dangerTime > 1.1) finishRun("snapped");
-    else if (game.tension <= 0.015 && game.dangerTime > 1.4) finishRun("escaped");
+    if (game.tension >= 0.985 && game.dangerTime > difficulty.snapGrace) finishRun("snapped");
+    else if (game.tension <= 0.015 && game.dangerTime > difficulty.escapeGrace) finishRun("escaped");
     else if (game.fishProgress >= 1) landRandomCatch();
   }
 
@@ -1348,21 +2775,24 @@ function drawTelevisionPushIn(elapsed) {
 
 function withScreenClip(bounds, callback, radius = 0) {
   drawingContext.save();
-  drawingContext.beginPath();
-  if (radius > 0 && drawingContext.roundRect) {
-    drawingContext.roundRect(
-      round(bounds.x),
-      round(bounds.y),
-      round(bounds.w),
-      round(bounds.h),
-      round(radius)
-    );
-  } else {
-    drawingContext.rect(round(bounds.x), round(bounds.y), round(bounds.w), round(bounds.h));
+  try {
+    drawingContext.beginPath();
+    if (radius > 0 && drawingContext.roundRect) {
+      drawingContext.roundRect(
+        round(bounds.x),
+        round(bounds.y),
+        round(bounds.w),
+        round(bounds.h),
+        round(radius)
+      );
+    } else {
+      drawingContext.rect(round(bounds.x), round(bounds.y), round(bounds.w), round(bounds.h));
+    }
+    drawingContext.clip();
+    callback();
+  } finally {
+    drawingContext.restore();
   }
-  drawingContext.clip();
-  callback();
-  drawingContext.restore();
 }
 
 function drawCrtBoot(bounds, elapsed) {
@@ -1407,7 +2837,9 @@ function drawWeatherBroadcast(elapsed) {
   ensureWeatherFrames(weather.id);
   const bounds = getCrtSafeBounds(TV_FULLSCREEN.screen);
   const frames = weatherFrameImages[weather.id] || [];
-  const framesReady = weatherFrameLoadState[weather.id] === "ready";
+  const framesReady = weatherFrameLoadState[weather.id] === "ready"
+    && frames.length > 0
+    && frames.every(Boolean);
   const frameIndex = framesReady
     ? floor(elapsed / TV_FULLSCREEN.frameDuration) % frames.length
     : 0;
@@ -1474,6 +2906,46 @@ function ensureWeatherFrames(weatherId) {
   }
 }
 
+function ensureLocationSceneFrames(locationId) {
+  const profile = LOCATION_PROFILES[locationId];
+  if (!profile || profile.sceneType !== "modular" || locationSceneLoadState[locationId]) return;
+
+  locationSceneLoadState[locationId] = "loading";
+  const bundle = { water: [], site: [], runoff: [], stormCloud: [] };
+  locationSceneFrames[locationId] = bundle;
+  const animationRoot = `public/images/location-backgrounds/${locationId}/animations`;
+  const locationSequences = [
+    { key: "water", folder: "water" },
+    {
+      key: "site",
+      folder: locationId === "signal-canal" ? "site-opaque-hook-v2" : "site"
+    },
+    { key: "runoff", folder: "runoff" },
+    { key: "stormCloud", folder: "storm-cloud" }
+  ];
+  const totalFrames = locationSequences.length * LOCATION_SCENE_FRAME_COUNT;
+  let loadedFrames = 0;
+  let failed = false;
+
+  for (const { key, folder } of locationSequences) {
+    for (let frame = 0; frame < LOCATION_SCENE_FRAME_COUNT; frame += 1) {
+      const frameName = String(frame).padStart(2, "0");
+      bundle[key][frame] = loadImage(
+        `${animationRoot}/${folder}/frame-${frameName}.png?v=${LOCATION_SCENE_REVISION}`,
+        () => {
+          loadedFrames += 1;
+          if (!failed && loadedFrames === totalFrames) locationSceneLoadState[locationId] = "ready";
+        },
+        () => {
+          failed = true;
+          locationSceneLoadState[locationId] = "error";
+          console.error(`Unable to load location frame: ${locationId}/${folder}/frame-${frameName}.png`);
+        }
+      );
+    }
+  }
+}
+
 function ensureWeatherSceneFrames(weatherId) {
   if (weatherSceneLoadState[weatherId]) return;
 
@@ -1514,144 +2986,6 @@ function drawWeatherLoadingSignal(bounds) {
   textSize(34);
   text("TUNING EXTERNAL CONDITIONS", bounds.x + bounds.w / 2, bounds.y + bounds.h / 2);
   textAlign(LEFT, BASELINE);
-}
-
-function drawWeatherHeader(bounds, weather) {
-  const pad = bounds.w * 0.055;
-  noStroke();
-  fill("#10242C");
-  rect(bounds.x, bounds.y, bounds.w, bounds.h * 0.13);
-  fill("#F4EBCF");
-  textStyle(BOLD);
-  textAlign(LEFT, CENTER);
-  textSize(max(15, bounds.h * 0.035));
-  text("THE ANGLER WEATHER SERVICE", bounds.x + pad, bounds.y + bounds.h * 0.065);
-  fill(weather.accent);
-  textAlign(RIGHT, CENTER);
-  text("LIVE", bounds.x + bounds.w - pad, bounds.y + bounds.h * 0.065);
-}
-
-function drawWeatherCopy(bounds, weather) {
-  const left = bounds.x + bounds.w * 0.61;
-  const right = bounds.x + bounds.w * 0.94;
-  fill("#10242C");
-  noStroke();
-  rect(left - bounds.w * 0.025, bounds.y + bounds.h * 0.22, right - left + bounds.w * 0.05, bounds.h * 0.39);
-
-  fill(weather.accent);
-  textAlign(LEFT, TOP);
-  textStyle(BOLD);
-  textSize(max(27, bounds.h * 0.084));
-  text(weather.title, left, bounds.y + bounds.h * 0.25);
-  fill("#F4EBCF");
-  textSize(max(18, bounds.h * 0.047));
-  text(weather.status, left, bounds.y + bounds.h * 0.39);
-  fill("#C7E5EA");
-  textStyle(NORMAL);
-  textSize(max(13, bounds.h * 0.028));
-  textWrap(WORD);
-  text(weather.note, left, bounds.y + bounds.h * 0.49, right - left, bounds.h * 0.12);
-  textAlign(LEFT, BASELINE);
-}
-
-function drawWeatherHalftone(bounds, weather) {
-  stroke(10, 20, 24, 38);
-  strokeWeight(2);
-  for (let y = bounds.y + bounds.h * 0.16; y < bounds.y + bounds.h; y += 20) {
-    for (let x = bounds.x + 8; x < bounds.x + bounds.w; x += 20) {
-      if ((round(x + y) / 20) % 3 !== 0) point(x, y);
-    }
-  }
-  noStroke();
-  fill(244, 235, 207, 20);
-  for (let index = 0; index < 9; index += 1) {
-    const y = bounds.y + bounds.h * (0.17 + index * 0.082);
-    rect(bounds.x, y, bounds.w, max(2, bounds.h * 0.008));
-  }
-}
-
-function drawAnimatedWeatherIcon(id, bounds, elapsed, accent) {
-  const cx = bounds.x + bounds.w / 2;
-  const cy = bounds.y + bounds.h / 2;
-  const tick = elapsed / 1000;
-  push();
-  stroke("#10242C");
-  strokeWeight(max(5, bounds.w * 0.012));
-  fill(accent);
-
-  if (id === "sunny") {
-    push();
-    translate(cx, cy);
-    rotate(tick * 0.22);
-    for (let index = 0; index < 12; index += 1) {
-      rotate(TWO_PI / 12);
-      line(bounds.w * 0.19, 0, bounds.w * 0.27, 0);
-    }
-    pop();
-    ellipse(cx, cy, bounds.w * 0.3);
-    drawEngravingLines(cx, cy, bounds.w * 0.12, 8);
-  } else if (id === "cloudy") {
-    const drift = sin(tick * 0.8) * bounds.w * 0.025;
-    drawComicCloud(cx - bounds.w * 0.08 + drift, cy, bounds.w * 0.5, accent);
-    drawComicCloud(cx + bounds.w * 0.18 - drift * 0.6, cy + bounds.h * 0.12, bounds.w * 0.34, "#AAB9B5");
-  } else if (id === "fog") {
-    fill("#D7E1D7");
-    noStroke();
-    ellipse(cx, cy, bounds.w * 0.22);
-    stroke("#10242C");
-    for (let index = 0; index < 7; index += 1) {
-      const offset = ((tick * 42 + index * 58) % (bounds.w * 0.66)) - bounds.w * 0.33;
-      const y = cy - bounds.h * 0.22 + index * bounds.h * 0.075;
-      line(cx + offset - bounds.w * 0.16, y, cx + offset + bounds.w * 0.16, y);
-    }
-  } else if (id === "rain") {
-    drawComicCloud(cx, cy - bounds.h * 0.15, bounds.w * 0.5, "#AFC6CB");
-    stroke(accent);
-    for (let index = 0; index < 12; index += 1) {
-      const lane = index % 6;
-      const phase = (tick * 140 + floor(index / 6) * 70 + lane * 24) % (bounds.h * 0.42);
-      const x = cx - bounds.w * 0.25 + lane * bounds.w * 0.1;
-      line(x, cy + phase - bounds.h * 0.02, x - bounds.w * 0.025, cy + phase + bounds.h * 0.1);
-    }
-  } else {
-    drawComicCloud(cx, cy - bounds.h * 0.16, bounds.w * 0.54, "#6A6880");
-    stroke("#10242C");
-    strokeWeight(max(6, bounds.w * 0.016));
-    fill(accent);
-    const flash = floor(tick * 2.3) % 5 === 0;
-    if (flash) fill("#F0C64F");
-    beginShape();
-    vertex(cx + bounds.w * 0.02, cy - bounds.h * 0.02);
-    vertex(cx - bounds.w * 0.08, cy + bounds.h * 0.2);
-    vertex(cx + bounds.w * 0.02, cy + bounds.h * 0.18);
-    vertex(cx - bounds.w * 0.04, cy + bounds.h * 0.42);
-    vertex(cx + bounds.w * 0.16, cy + bounds.h * 0.1);
-    vertex(cx + bounds.w * 0.06, cy + bounds.h * 0.12);
-    endShape(CLOSE);
-  }
-  pop();
-}
-
-function drawComicCloud(cx, cy, widthValue, colour) {
-  push();
-  stroke("#10242C");
-  strokeWeight(max(5, widthValue * 0.024));
-  fill(colour);
-  ellipse(cx - widthValue * 0.22, cy + widthValue * 0.035, widthValue * 0.34);
-  ellipse(cx, cy - widthValue * 0.08, widthValue * 0.46);
-  ellipse(cx + widthValue * 0.24, cy + widthValue * 0.03, widthValue * 0.32);
-  rect(cx - widthValue * 0.35, cy, widthValue * 0.7, widthValue * 0.18);
-  pop();
-}
-
-function drawEngravingLines(cx, cy, radius, count) {
-  stroke("#10242C");
-  strokeWeight(2);
-  for (let index = 0; index < count; index += 1) {
-    const y = cy - radius * 0.55 + index * radius * 0.15;
-    const half = sqrt(max(0, radius * radius - sq(y - cy))) * 0.72;
-    line(cx - half, y, cx + half, y);
-  }
 }
 
 function drawCrtScanlines(bounds, alphaValue) {
@@ -1792,6 +3126,10 @@ function drawWaterLocation(location, illustration, hovered, selected, elapsed) {
   textSize(23);
   text(location.model, label.x + label.w / 2, label.y + 50);
 
+  if (game.aiRecommendation?.status !== "requesting" && game.aiRecommendation?.waterId === location.id) {
+    drawRecommendationBulb({ x: label.x + label.w - 88, y: label.y + 12, w: 68, h: 86 });
+  }
+
   if (selected) {
     fill(C.yellow);
     circle(label.x + 24, label.y + label.h / 2, 15 + pulse * 3);
@@ -1867,6 +3205,7 @@ function getWaterLocationAt(x, y) {
 
 function confirmWaterSelection() {
   if (game.waterIndex < 0) return;
+  ensureLocationSceneFrames(WATER_LOCATIONS[game.waterIndex]?.id);
   if (game.waterSelectOrigin === "result" || game.currentCatch) {
     game.waterSelectOrigin = null;
     const activeWeather = WEATHER_CONDITIONS[game.weatherIndex] || WEATHER_CONDITIONS[0];
@@ -1949,16 +3288,16 @@ function getTimedFrameIndex(elapsed, frameDurations) {
 }
 
 function returnToWeather() {
-  if (game.waterSelectOrigin === "result" || game.currentCatch) {
+  const returnState = window.AnglerGameFlow.getWaterSelectionReturnState({
+    origin: game.waterSelectOrigin,
+    hasCurrentCatch: Boolean(game.currentCatch)
+  });
+  if (returnState === "result") {
     game.waterSelectOrigin = null;
-    game.state = "result";
-    game.stateStarted = millis();
-    updateAccessibleStatus();
+    setState(returnState);
     return;
   }
-  game.state = "weather";
-  game.stateStarted = millis();
-  updateAccessibleStatus();
+  setState(returnState, { preserveSelection: true });
 }
 
 function drawLivingFrame(frames, elapsed, duration, bounds) {
@@ -1969,20 +3308,30 @@ function drawLivingFrame(frames, elapsed, duration, bounds) {
 
 function drawLivingDrink(elapsed) {
   if (!livingBeerFrames.length) return;
-  const frameDurations = [
-    650, 240, 220, 240, 240, 260, 280, 320, 360, 420,
-    500, 650, 500, 420, 360, 320, 280, 260, 300, 650
-  ];
-  drawTimedLivingOverlay(livingBeerFrames, elapsed, frameDurations);
+  const animationElapsed = max(0, elapsed - INTRO_DRINK_START_HOLD);
+  const frameIndex = drawTimedLivingOverlay(
+    livingBeerFrames,
+    animationElapsed,
+    INTRO_DRINK_FRAME_DURATIONS
+  );
+  if (!game.drinkingSoundPlayed && frameIndex >= INTRO_DRINK_MOUTH_FRAME_INDEX) {
+    game.drinkingSoundPlayed = true;
+    playDrinkingSound();
+  }
 }
 
 function drawLivingRemote(elapsed) {
   if (!livingRemoteFrames.length) return;
-  const frameDurations = [
-    420, 220, 220, 240, 240, 220, 220, 220, 220, 240,
-    300, 440, 500, 260, 240, 220, 220, 220, 300, 500
-  ];
-  drawTimedLivingOverlay(livingRemoteFrames, elapsed, frameDurations);
+  const frameIndex = drawTimedLivingOverlay(
+    livingRemoteFrames,
+    elapsed,
+    INTRO_REMOTE_FRAME_DURATIONS
+  );
+  const nextPressFrame = INTRO_REMOTE_BUTTON_PRESS_FRAME_INDICES[game.remoteButtonSoundPressIndex];
+  if (nextPressFrame !== undefined && frameIndex >= nextPressFrame) {
+    game.remoteButtonSoundPressIndex += 1;
+    playRemoteButtonSound();
+  }
 }
 
 function drawTimedLivingOverlay(frames, elapsed, frameDurations) {
@@ -1993,6 +3342,7 @@ function drawTimedLivingOverlay(frames, elapsed, frameDurations) {
     index += 1;
   }
   image(frames[index], 0, 0);
+  return index;
 }
 
 function drawLivingQuestion(now) {
@@ -2007,13 +3357,26 @@ function drawLivingQuestion(now) {
   text("WHAT ARE YOU FISHING FOR?", title.x + title.w / 2, title.y + title.h / 2);
 
   fill("#18252A");
-  textStyle(NORMAL);
-  textAlign(LEFT, TOP);
-  textSize(31);
-  textWrap(WORD);
   const visibleQuestion = game.question || "Type your question here...";
-  if (!game.question) fill("#687A78");
-  text(visibleQuestion, input.x, input.y, input.w, input.h);
+  drawScrollableTextBlock(
+    visibleQuestion,
+    { x: input.x, y: input.y, w: input.w, h: input.h - 28 },
+    "questionInput",
+    {
+      fontSize: 31,
+      lineHeight: 39,
+      colour: game.question ? "#18252A" : "#687A78",
+      scrollColour: "#D6477E",
+      sanitise: false,
+      followEnd: game.questionFocused
+    }
+  );
+
+  fill(game.question.length >= QUESTION_MAX_LENGTH ? "#D6477E" : "#40585B");
+  textStyle(BOLD);
+  textAlign(RIGHT, BOTTOM);
+  textSize(15);
+  text(`${game.question.length} / ${QUESTION_MAX_LENGTH}`, input.x + input.w - 10, input.y + input.h - 2);
 
   if (game.questionFocused && floor(now / 450) % 2 === 0) {
     fill("#D6477E");
@@ -2140,7 +3503,8 @@ function drawRiverSceneLayers(now, weatherId) {
 }
 
 function drawModularLocationLayers(now, profile, weatherId) {
-  const frames = locationSceneFrames[profile.id];
+  ensureLocationSceneFrames(profile.id);
+  const frames = locationSceneLoadState[profile.id] === "ready" ? locationSceneFrames[profile.id] : null;
   if (weatherId === "fog") ensureWeatherSceneFrames(weatherId);
   const weatherFrames = weatherId === "fog"
     && weatherSceneLoadState[weatherId] === "ready"
@@ -2379,284 +3743,6 @@ function drawPlantAnimation(sheet, x, y, now, offset) {
   image(sheet, x, y, 128, 180, frame * 128, 0, 128, 180);
 }
 
-function drawCanopyMotion(now) {
-  const sway = round(sin(now * 0.0011) * 3 / GRID) * GRID;
-  drawLeafCluster(1178 + sway, 286, 1.05, 0);
-  drawLeafCluster(1450 - sway, 235, 0.88, 1);
-  drawLeafCluster(1690 + sway, 330, 0.72, 2);
-}
-
-function drawLeafCluster(x, y, scaleValue, variant) {
-  push();
-  translate(round(x / GRID) * GRID, round(y / GRID) * GRID);
-  scale(scaleValue);
-  noStroke();
-  const colours = [C.forest, C.forestMid, C.forestLight];
-  for (let i = 0; i < 22; i += 1) {
-    const seedX = hash01(i * 31 + variant * 17);
-    const seedY = hash01(i * 47 + variant * 29);
-    const px = -38 + round(seedX * 76 / GRID) * GRID;
-    const py = -21 + round(seedY * 42 / GRID) * GRID;
-    fill(colours[(i + variant) % colours.length]);
-    rect(px, py, 4 + (i % 3) * 2, i % 4 === 0 ? 4 : 2);
-  }
-  pop();
-}
-
-function drawShoreMotion(now) {
-  const phase = now * 0.0021;
-  noFill();
-  stroke(C.riverGlint);
-  strokeWeight(2);
-  for (let i = 0; i < 3; i += 1) {
-    const y = 682 + i * 76;
-    const x = getWaterLeft(y) + 54 + sin(phase + i) * 6;
-    arc(round(x), round(y), 46 + i * 8, 10, 0.08, PI - 0.08);
-  }
-}
-
-function drawAmbientParticles(now) {
-  noStroke();
-  for (let i = 0; i < 9; i += 1) {
-    const x = 160 + ((i * 211 + now * (0.006 + i * 0.0004)) % 1580);
-    const y = 170 + ((i * 73 + sin(now * 0.0014 + i) * 34) % 290);
-    fill(i % 4 === 0 ? C.yellow : C.skyLight);
-    rect(round(x / GRID) * GRID, round(y / GRID) * GRID, i % 3 === 0 ? 4 : 2, 2);
-  }
-}
-
-function drawSky(now) {
-  noStroke();
-  fill(C.sky);
-  rect(0, 0, W, 390);
-  fill(C.skyLight);
-  rect(0, 286, W, 104);
-  fill(C.cloudShade);
-  for (let x = 18; x < W; x += 94) {
-    const y = 112 + ((x * 7) % 116);
-    rect(x, y, 18 + (x % 4) * 6, 2);
-  }
-
-  drawCloud(-220 + (now * 0.012) % 2300, 142, 1);
-  drawCloud(740 + (now * 0.008) % 1500, 238, 0.72);
-  drawCloud(1420 + (now * 0.006) % 900, 108, 0.58);
-
-  drawPixelSun(1540, 145);
-}
-
-function drawCloud(x, y, scaleValue) {
-  push();
-  translate(round(x), round(y));
-  scale(scaleValue);
-  noStroke();
-  fill(C.cloudShade);
-  rect(-170, 20, 340, 44);
-  rect(-126, -12, 252, 70);
-  rect(-54, -38, 108, 92);
-  fill(C.skyLight);
-  rect(-164, 10, 328, 38);
-  rect(-116, -20, 224, 58);
-  rect(-44, -44, 88, 70);
-  fill(C.mist);
-  rect(-152, 54, 82, 6);
-  rect(-48, 50, 118, 8);
-  rect(92, 48, 48, 6);
-  pop();
-}
-
-function drawPixelSun(x, y) {
-  noStroke();
-  fill(C.paper);
-  const rows = [64, 88, 104, 116, 116, 104, 88, 64];
-  for (let i = 0; i < rows.length; i += 1) {
-    rect(x - rows[i] / 2, y - 56 + i * 14, rows[i], 14);
-  }
-  fill(C.yellow);
-  rect(x - 34, y - 38, 26, 12);
-  rect(x - 46, y - 20, 18, 8);
-}
-
-function drawFarHills() {
-  noStroke();
-  fill(C.hillShadow);
-  beginShape();
-  vertex(0, 380);
-  vertex(0, 300);
-  vertex(140, 258);
-  vertex(270, 322);
-  vertex(420, 236);
-  vertex(590, 326);
-  vertex(760, 250);
-  vertex(930, 318);
-  vertex(1110, 226);
-  vertex(1290, 320);
-  vertex(1470, 248);
-  vertex(1640, 324);
-  vertex(1800, 260);
-  vertex(W, 316);
-  vertex(W, 432);
-  vertex(0, 432);
-  endShape(CLOSE);
-
-  fill(C.mist);
-  beginShape();
-  vertex(0, 300);
-  vertex(140, 258);
-  vertex(270, 322);
-  vertex(420, 236);
-  vertex(420, 338);
-  vertex(270, 344);
-  vertex(140, 286);
-  vertex(0, 334);
-  endShape(CLOSE);
-  beginShape();
-  vertex(760, 250);
-  vertex(930, 318);
-  vertex(1110, 226);
-  vertex(1110, 348);
-  vertex(930, 348);
-  endShape(CLOSE);
-  beginShape();
-  vertex(1470, 248);
-  vertex(1640, 324);
-  vertex(1800, 260);
-  vertex(1800, 362);
-  vertex(1640, 360);
-  endShape(CLOSE);
-
-  fill(C.skyLight);
-  drawMountainMarks(420, 236, 150);
-  drawMountainMarks(1110, 226, 168);
-  drawMountainMarks(1800, 260, 124);
-
-  fill(C.forestMid);
-  beginShape();
-  vertex(0, 430);
-  vertex(0, 350);
-  vertex(180, 302);
-  vertex(340, 382);
-  vertex(520, 292);
-  vertex(700, 382);
-  vertex(900, 326);
-  vertex(1080, 394);
-  vertex(1270, 312);
-  vertex(1460, 390);
-  vertex(1640, 326);
-  vertex(W, 370);
-  vertex(W, 470);
-  vertex(0, 470);
-  endShape(CLOSE);
-
-  fill(C.forestLight);
-  for (let x = 12; x < W; x += 74) {
-    const y = 360 + ((x * 13) % 54);
-    rect(x, y, 24 + (x % 3) * 10, 3);
-  }
-}
-
-function drawMountainMarks(peakX, peakY, size) {
-  rect(peakX - size * 0.08, peakY + 28, size * 0.18, 6);
-  rect(peakX - size * 0.18, peakY + 42, size * 0.14, 5);
-  rect(peakX + size * 0.1, peakY + 54, size * 0.22, 4);
-}
-
-function drawFarTrees(now) {
-  const sway = round(sin(now * 0.0008) * 2);
-  noStroke();
-  fill(C.forest);
-  rect(0, 430, W, 70);
-
-  for (let x = -10; x < W + 20; x += 30) {
-    const heightValue = 54 + ((x * 17) % 58 + 58) % 58;
-    drawSmallTree(x, 456 + sway, heightValue, C.forest, C.forestLight);
-  }
-
-  fill(C.inkSoft);
-  for (let x = 8; x < W; x += 52) {
-    const heightValue = 64 + ((x * 11) % 54 + 54) % 54;
-    drawSmallTree(x, 482, heightValue, C.inkSoft, C.forestMid);
-  }
-}
-
-function drawSmallTree(x, groundY, treeHeight, darkColour, lightColour) {
-  noStroke();
-  fill(darkColour);
-  rect(x - 3, groundY - treeHeight * 0.5, 6, treeHeight * 0.5);
-  triangle(x, groundY - treeHeight, x - 10, groundY - treeHeight * 0.57, x + 10, groundY - treeHeight * 0.57);
-  triangle(x, groundY - treeHeight * 0.82, x - 15, groundY - treeHeight * 0.34, x + 15, groundY - treeHeight * 0.34);
-  triangle(x, groundY - treeHeight * 0.62, x - 19, groundY - treeHeight * 0.1, x + 19, groundY - treeHeight * 0.1);
-  fill(lightColour);
-  rect(x - 5, groundY - treeHeight * 0.73, 4, treeHeight * 0.22);
-  rect(x - 10, groundY - treeHeight * 0.43, 6, 3);
-}
-
-function drawRiver(now) {
-  noStroke();
-  fill(C.riverDeep);
-  rect(0, 478, W, 432);
-  fill(C.river);
-  beginShape();
-  vertex(0, 535);
-  vertex(W, 500);
-  vertex(W, 760);
-  vertex(0, 810);
-  endShape(CLOSE);
-
-  fill(C.riverLight);
-  beginShape();
-  vertex(0, 520);
-  vertex(W, 496);
-  vertex(W, 552);
-  vertex(0, 584);
-  endShape(CLOSE);
-
-  fill(C.riverDeep);
-  beginShape();
-  vertex(0, 720);
-  vertex(W, 696);
-  vertex(W, 758);
-  vertex(0, 792);
-  endShape(CLOSE);
-
-  const t = now * 0.0011;
-  const waterColours = [C.riverGlint, C.mist, C.forestLight, C.riverDeep, C.riverLight];
-  for (let row = 0; row < 24; row += 1) {
-    const depth = row / 23;
-    const y = 500 + row * 17;
-    fill(waterColours[row % waterColours.length]);
-    const spacing = 78 + round(depth * 74);
-    for (let x = -120; x < W + 140; x += spacing) {
-      const drift = (t * (11 + row * 0.55) + row * 29) % spacing;
-      const seed = hash01(x * 0.17 + row * 43);
-      const widthValue = 12 + round(seed * (20 + depth * 54));
-      const markHeight = depth > 0.62 && row % 5 === 0 ? 4 : 2;
-      rect(round(x + drift), y, widthValue, markHeight);
-      if (seed > 0.72) rect(round(x + drift + widthValue + 6), y, 5 + round(seed * 10), 2);
-    }
-  }
-
-  stroke(C.inkSoft);
-  strokeWeight(3);
-  noFill();
-  for (let row = 0; row < 6; row += 1) {
-    const y = 556 + row * 61;
-    drawPixelWaterLine(y, t + row * 0.73, 5 + row * 0.5);
-  }
-}
-
-function drawPixelWaterLine(y, phase, amplitude) {
-  beginShape();
-  for (let x = -24; x <= W + 24; x += 24) {
-    const py = round((y + sin(x * 0.014 + phase) * amplitude) / GRID) * GRID;
-    vertex(x, py);
-  }
-  endShape();
-}
-
-function hash01(value) {
-  return abs(sin(value * 12.9898) * 43758.5453) % 1;
-}
-
 function drawObservationZone(now) {
   if (!["waiting", "bite", "hooked"].includes(game.state)) return;
   const x = game.observation.x;
@@ -2702,100 +3788,6 @@ function drawObservationBrackets(x, y, zoneW, zoneH, colour) {
   line(left, bottom - 28, left + arm, bottom - 10);
   line(right, bottom - 28, right, bottom - arm - 28);
   line(right, bottom - 28, right - arm, bottom - 10);
-}
-
-function drawNearBank(now) {
-  noStroke();
-  fill(C.inkSoft);
-  beginShape();
-  vertex(0, 760);
-  vertex(140, 742);
-  vertex(270, 790);
-  vertex(430, 770);
-  vertex(600, 845);
-  vertex(760, 860);
-  vertex(900, 920);
-  vertex(W, 900);
-  vertex(W, H);
-  vertex(0, H);
-  endShape(CLOSE);
-
-  fill(C.bankMid);
-  beginShape();
-  vertex(0, 790);
-  vertex(136, 770);
-  vertex(276, 814);
-  vertex(426, 798);
-  vertex(596, 858);
-  vertex(742, 876);
-  vertex(840, 914);
-  vertex(692, 904);
-  vertex(522, 850);
-  vertex(350, 836);
-  vertex(180, 806);
-  vertex(0, 838);
-  endShape(CLOSE);
-
-  fill(C.ink);
-  beginShape();
-  vertex(0, 830);
-  vertex(150, 800);
-  vertex(300, 846);
-  vertex(470, 820);
-  vertex(650, 900);
-  vertex(850, 930);
-  vertex(W, 940);
-  vertex(W, H);
-  vertex(0, H);
-  endShape(CLOSE);
-
-  drawReeds(70, 840, 1, now);
-  drawReeds(525, 850, -1, now + 500);
-
-  fill(C.forestMid);
-  for (let i = 0; i < 48; i += 1) {
-    const x = (i * 109 + 27) % 830;
-    const y = 838 + ((i * 47) % 190);
-    rect(x, y, 6 + (i % 5) * 5, 2 + (i % 3) * 2);
-  }
-
-  drawBankRock(78, 834, 88, 52);
-  drawBankRock(454, 842, 74, 45);
-  drawBankRock(650, 900, 112, 58);
-}
-
-function drawBankRock(x, y, w, h) {
-  noStroke();
-  fill(C.inkBlue);
-  beginShape();
-  vertex(x - w * 0.5, y + h * 0.4);
-  vertex(x - w * 0.34, y - h * 0.3);
-  vertex(x - w * 0.08, y - h * 0.5);
-  vertex(x + w * 0.36, y - h * 0.28);
-  vertex(x + w * 0.5, y + h * 0.4);
-  endShape(CLOSE);
-  fill(C.bankMid);
-  rect(x - w * 0.22, y - h * 0.28, w * 0.28, 5);
-  rect(x + w * 0.08, y - h * 0.12, w * 0.18, 3);
-}
-
-function drawReeds(x, groundY, direction, now) {
-  push();
-  translate(x, groundY);
-  const sway = round(sin(now * 0.0015) * 4 / GRID) * GRID;
-  stroke(C.forest);
-  strokeWeight(3);
-  for (let i = 0; i < 7; i += 1) {
-    const px = i * 11 * direction;
-    line(px, 10, px + sway + i, -48 - (i % 4) * 14);
-  }
-  noStroke();
-  for (let i = 0; i < 7; i += 2) {
-    fill(i % 4 === 0 ? C.forestLight : C.forestMid);
-    rect(i * 11 * direction + sway - 2, -65 - (i % 4) * 14, 5, 16);
-    rect(i * 11 * direction - 6, -34 - (i % 3) * 9, 12 * direction, 3);
-  }
-  pop();
 }
 
 function drawAngler(now) {
@@ -2957,25 +3949,6 @@ function drawSplashes() {
   }
 }
 
-function drawFlowTopBar(sectionLabel) {
-  noStroke();
-  fill(C.ink);
-  rect(0, 0, W, 82);
-  fill(C.paper);
-  textStyle(BOLD);
-  textSize(27);
-  text("THE ANGLER", 34, 50);
-  fill(C.forestMid);
-  rect(260, 22, 2, 38);
-  fill(C.mist);
-  textStyle(NORMAL);
-  textSize(17);
-  text(sectionLabel, 292, 49);
-  textAlign(RIGHT, BASELINE);
-  text("BENEATH THE SURFACE?", W - 34, 49);
-  textAlign(LEFT, BASELINE);
-}
-
 function drawQuestionScreen(now) {
   background(C.ink);
   image(targetScreenBase, UI_ART.x, UI_ART.y, UI_ART.w, UI_ART.h);
@@ -2988,13 +3961,25 @@ function drawQuestionScreen(now) {
   drawTargetSignal(now);
 
   const input = QUESTION_BOUNDS.input;
-  fill(C.paper);
-  textStyle(NORMAL);
-  textSize(34);
-  textWrap(WORD);
   const visibleQuestion = game.question || "Type your question here...";
-  if (!game.question) fill(C.hillShadow);
-  text(visibleQuestion, input.x + 28, input.y + 58, input.w - 56, input.h - 84);
+  drawScrollableTextBlock(
+    visibleQuestion,
+    { x: input.x + 28, y: input.y + 58, w: input.w - 56, h: input.h - 112 },
+    "questionInput",
+    {
+      fontSize: 34,
+      lineHeight: 44,
+      colour: game.question ? C.paper : C.hillShadow,
+      scrollColour: C.yellow,
+      sanitise: false,
+      followEnd: game.questionFocused
+    }
+  );
+  fill(game.question.length >= QUESTION_MAX_LENGTH ? "#F02B91" : C.mist);
+  textStyle(BOLD);
+  textAlign(RIGHT, BOTTOM);
+  textSize(17);
+  text(`${game.question.length} / ${QUESTION_MAX_LENGTH}`, input.x + input.w - 30, input.y + input.h - 22);
   if (game.questionFocused && floor(now / 450) % 2 === 0) {
     fill(C.yellow);
     rect(input.x + 28, input.y + input.h - 42, 22, 3);
@@ -3033,6 +4018,7 @@ function drawTargetSignal(now) {
 
 function noteQuestionEdit() {
   game.lastQuestionEditAt = millis();
+  game.aiRecommendation = null;
   if (targetShadowFrames.length > 0) {
     game.targetShadowIndex = (game.targetShadowIndex + 1) % targetShadowFrames.length;
   }
@@ -3051,16 +4037,6 @@ function drawImageContained(source, destination) {
   );
 }
 
-function drawComicOrnament(index, x, y, w, h, alphaValue = 255) {
-  if (comicOrnaments.length === 0) return;
-  const ornament = comicOrnaments[index % comicOrnaments.length];
-  push();
-  tint(255, alphaValue);
-  image(ornament, x, y, w, h);
-  noTint();
-  pop();
-}
-
 function drawTackleScreen() {
   background("#100A14");
   image(toolboxRoomBackground, 0, 0, W, H);
@@ -3073,10 +4049,18 @@ function drawTackleScreen() {
 
   fill("#F0E6C8");
   textStyle(BOLD);
-  textSize(26);
-  textAlign(LEFT, CENTER);
-  text(game.question, 460, 148, 940, 96);
-  textAlign(LEFT, BASELINE);
+  drawScrollableTextBlock(
+    game.question,
+    { x: 460, y: 148, w: 940, h: 96 },
+    "tackleQuestion",
+    {
+      fontSize: 26,
+      lineHeight: 34,
+      colour: "#F0E6C8",
+      scrollColour: "#F02B91",
+      verticalAlign: "center"
+    }
+  );
 
   for (let index = 0; index < TACKLE_BOUNDS.cards.length; index += 1) {
     const profileIndex = game.recommendations[index];
@@ -3117,6 +4101,9 @@ function drawTackleCard(profile, bounds, cardIndex) {
   const lureInset = selected ? 48 : 58;
   const lureBounds = { x: bounds.x + lureInset, y: bounds.y + 74, w: bounds.w - lureInset * 2, h: 190 };
   drawAssetContained(INTERACTION_ASSETS.lures[profile.type], lureBounds);
+  if (game.aiRecommendation?.status !== "requesting" && game.aiRecommendation?.tackleId === profile.id) {
+    drawRecommendationBulb({ x: bounds.x + 18, y: bounds.y + 76, w: 66, h: 86 });
+  }
   drawUiCenteredText(
     TACKLE_TYPES[profile.type].name,
     { x: bounds.x + 20, y: bounds.y + 260, w: bounds.w - 40, h: 42 },
@@ -3128,6 +4115,11 @@ function drawTackleCard(profile, bounds, cardIndex) {
   if (selected) {
     image(tackleSelectedMarker, bounds.x + bounds.w - tackleSelectedMarker.width - 18, bounds.y + 17);
   }
+}
+
+function drawRecommendationBulb(bounds) {
+  if (!recommendationBulb) return;
+  drawImageContained(recommendationBulb, bounds);
 }
 
 function drawTackleDetails(profile, bounds) {
@@ -3203,23 +4195,17 @@ function drawUiCenteredText(label, bounds, size, colour, yOffset = 0) {
   noStroke();
   textStyle(BOLD);
   textSize(size);
-  textAlign(CENTER, CENTER);
-  text(label, bounds.x + bounds.w / 2, bounds.y + bounds.h / 2 + yOffset);
+  const value = String(label || "");
+  if (splitUiFontRuns(value).some((run) => run.supplemental)) {
+    textAlign(LEFT, CENTER);
+    const width = measureMixedUiText(value);
+    drawMixedUiText(value, bounds.x + (bounds.w - width) / 2, bounds.y + bounds.h / 2 + yOffset);
+  } else {
+    textFont(uiFont);
+    textAlign(CENTER, CENTER);
+    text(value, bounds.x + bounds.w / 2, bounds.y + bounds.h / 2 + yOffset);
+  }
   pop();
-}
-
-function drawAsset(source, destination) {
-  image(
-    interactionAssetSheet,
-    destination.x,
-    destination.y,
-    destination.w,
-    destination.h,
-    source.x,
-    source.y,
-    source.w,
-    source.h
-  );
 }
 
 function drawAssetContained(source, destination) {
@@ -3260,29 +4246,9 @@ function prepareComicAssets() {
     archiveCatchSprites.push(archiveById[catchDefinition.id]);
   }
 
-  const keyedBackpack = keyedCrop(
-    backpackOpenNativeSource,
-    { x: 0, y: 0, w: backpackOpenNativeSource.width, h: backpackOpenNativeSource.height },
-    false
-  );
-  const backpackBounds = findVisibleBounds(keyedBackpack, "backpack");
-  backpackOpenNative = keyedBackpack.get(
-    backpackBounds.x,
-    backpackBounds.y,
-    backpackBounds.w,
-    backpackBounds.h
-  );
-
   extractBandRow(fishingEffectsSheet, castComicFrames, 8, 112, 314, 18, 5);
   extractBandRow(fishingEffectsSheet, biteComicFrames, 6, 410, 658, 18, 5);
   extractBandRow(fishingEffectsSheet, tensionComicFrames, 8, 746, 978, 18, 5);
-
-  for (let row = 0; row < 2; row += 1) {
-    for (let column = 0; column < 5; column += 1) {
-      const cell = getGridCell(catchRevealSheet, 5, 2, column, row, 5);
-      catchRevealFrames.push(keyedCrop(catchRevealSheet, cell, false));
-    }
-  }
 
   const targetShadowCells = [
     { x: 30, y: 180, w: 410, h: 320 },
@@ -3291,27 +4257,15 @@ function prepareComicAssets() {
     { x: 1375, y: 175, w: 365, h: 330 },
     { x: 1755, y: 170, w: 400, h: 340 }
   ];
-  for (const cell of targetShadowCells) {
+  for (let index = 0; index < targetShadowCells.length; index += 1) {
+    if (index === 4) {
+      targetShadowFrames.push(juvenilePerchV2.shadow);
+      continue;
+    }
+    const cell = targetShadowCells[index];
     const shadow = keyedCrop(targetShadowsNativeSheet, cell, false);
     const shadowBounds = findVisibleBounds(shadow, "target");
     targetShadowFrames.push(shadow.get(shadowBounds.x, shadowBounds.y, shadowBounds.w, shadowBounds.h));
-  }
-  for (let column = 0; column < 8; column += 1) {
-    const cell = getGridCell(targetLockSheet, 8, 2, column, 1, 4);
-    targetLockFrames.push(removeTargetPanel(targetLockSheet, cell));
-  }
-
-  for (let column = 0; column < 6; column += 1) {
-    const cell = getGridCell(saveComicSheet, 6, 2, column, 0, 5);
-    const keyedStamp = keyedCrop(saveComicSheet, cell, false);
-    const visibleStamp = findVisibleBounds(keyedStamp, "save");
-    saveStampFrames.push(keyedStamp.get(visibleStamp.x, visibleStamp.y, visibleStamp.w, visibleStamp.h));
-  }
-  extractGridRow(saveComicSheet, comicOrnaments, 6, 1, 2, 5);
-
-  for (let column = 0; column < 8; column += 1) {
-    const cell = getGridCell(tackleSelectSheet, 8, 1, column, 0, 7);
-    tackleSelectFrames.push(keyedCrop(tackleSelectSheet, cell, true));
   }
 }
 
@@ -3325,30 +4279,6 @@ function extractBandRow(sheet, target, columns, top, bottom, horizontalInset, ve
       w: max(1, x1 - x0),
       h: max(1, bottom - top - verticalInset * 2)
     };
-    target.push(keyedCrop(sheet, cell, false));
-  }
-}
-
-function removeTargetPanel(sheet, crop) {
-  const output = sheet.get(crop.x, crop.y, crop.w, crop.h);
-  output.loadPixels();
-  for (let index = 0; index < output.pixels.length; index += 4) {
-    const r = output.pixels[index];
-    const g = output.pixels[index + 1];
-    const b = output.pixels[index + 2];
-    const dr = r - 2;
-    const dg = g - 82;
-    const db = b - 109;
-    if (dr * dr + dg * dg + db * db <= 24 * 24) output.pixels[index + 3] = 0;
-  }
-  output.updatePixels();
-  const bounds = findVisibleBounds(output, "target");
-  return output.get(bounds.x, bounds.y, bounds.w, bounds.h);
-}
-
-function extractGridRow(sheet, target, columns, row, rows, inset) {
-  for (let column = 0; column < columns; column += 1) {
-    const cell = getGridCell(sheet, columns, rows, column, row, inset);
     target.push(keyedCrop(sheet, cell, false));
   }
 }
@@ -3381,99 +4311,6 @@ function keyedCrop(sheet, crop, removeDarkPanel) {
   }
   output.updatePixels();
   return output;
-}
-
-function createArchiveCatchSprite(source, catchId) {
-  source.loadPixels();
-  const output = createImage(source.width, source.height);
-  output.loadPixels();
-
-  for (let y = 0; y < source.height; y += 1) {
-    for (let x = 0; x < source.width; x += 1) {
-      const index = 4 * (y * source.width + x);
-      const r = source.pixels[index];
-      const g = source.pixels[index + 1];
-      const b = source.pixels[index + 2];
-      const a = source.pixels[index + 3];
-      const lowerHalf = y > source.height * 0.34;
-      const skin = lowerHalf && r > 88 && r > g * 1.12 && r - b > 30 && g > b * 0.78;
-      const sleeve = y > source.height * 0.48 && r < 95 && g < 125 && b < 135 && g > r * 0.72;
-      const lowerDebris = y > source.height * 0.72;
-      const removePixel = skin || sleeve || lowerDebris;
-
-      output.pixels[index] = r;
-      output.pixels[index + 1] = g;
-      output.pixels[index + 2] = b;
-      output.pixels[index + 3] = removePixel ? 0 : a;
-    }
-  }
-  output.updatePixels();
-  keepLargestArchiveComponent(output);
-
-  return {
-    image: output,
-    crop: findVisibleBounds(output, catchId)
-  };
-}
-
-function keepLargestArchiveComponent(source) {
-  source.loadPixels();
-  const widthValue = source.width;
-  const heightValue = source.height;
-  const pixelCount = widthValue * heightValue;
-  const visited = new Uint8Array(pixelCount);
-  const labels = new Int32Array(pixelCount);
-  const componentSizes = [0];
-  const queue = new Int32Array(pixelCount);
-  let componentId = 0;
-
-  for (let start = 0; start < pixelCount; start += 1) {
-    if (visited[start] || source.pixels[start * 4 + 3] < 32) continue;
-    componentId += 1;
-    let head = 0;
-    let tail = 1;
-    let size = 0;
-    queue[0] = start;
-    visited[start] = 1;
-
-    while (head < tail) {
-      const current = queue[head];
-      head += 1;
-      labels[current] = componentId;
-      size += 1;
-      const x = current % widthValue;
-      const y = floor(current / widthValue);
-
-      for (let offsetY = -1; offsetY <= 1; offsetY += 1) {
-        for (let offsetX = -1; offsetX <= 1; offsetX += 1) {
-          if (offsetX === 0 && offsetY === 0) continue;
-          const nextX = x + offsetX;
-          const nextY = y + offsetY;
-          if (nextX < 0 || nextX >= widthValue || nextY < 0 || nextY >= heightValue) continue;
-          const next = nextY * widthValue + nextX;
-          if (visited[next] || source.pixels[next * 4 + 3] < 32) continue;
-          visited[next] = 1;
-          queue[tail] = next;
-          tail += 1;
-        }
-      }
-    }
-    componentSizes[componentId] = size;
-  }
-
-  let largestId = 0;
-  let largestSize = 0;
-  for (let id = 1; id < componentSizes.length; id += 1) {
-    if (componentSizes[id] > largestSize) {
-      largestId = id;
-      largestSize = componentSizes[id];
-    }
-  }
-
-  for (let index = 0; index < pixelCount; index += 1) {
-    if (labels[index] !== largestId) source.pixels[index * 4 + 3] = 0;
-  }
-  source.updatePixels();
 }
 
 function findVisibleBounds(source, catchId) {
@@ -3521,40 +4358,7 @@ function drawArchiveCatchSprite(sprite, destination) {
   );
 }
 
-function drawFrame(bounds) {
-  noStroke();
-  fill(C.paper);
-  rect(bounds.x, bounds.y, bounds.w, bounds.h);
-  fill(C.ink);
-  rect(bounds.x + 8, bounds.y + 8, bounds.w - 16, bounds.h - 16);
-}
-
-function setHoverTip(bounds, title, effect, caution) {
-  if (!game.hoverTip && pointInRect(mouseX, mouseY, bounds)) game.hoverTip = { title, effect, caution };
-}
-
-function drawHoverTip() {
-  if (!game.hoverTip) return;
-  const tip = game.hoverTip;
-  const w = 300;
-  const h = 112;
-  const x = constrain(mouseX + 24, 18, W - w - 18);
-  const y = constrain(mouseY > H / 2 ? mouseY - h - 24 : mouseY + 24, 86, H - h - 18);
-  drawAsset(INTERACTION_ASSETS.tooltip, { x, y, w, h });
-  fill(C.yellow);
-  textStyle(BOLD);
-  textSize(12);
-  text(tip.title, x + 18, y + 25);
-  fill(C.paper);
-  textStyle(NORMAL);
-  textSize(11);
-  text(tip.effect, x + 18, y + 48, w - 36, 24);
-  fill(C.mist);
-  text(tip.caution, x + 18, y + 78, w - 36, 24);
-}
-
 function drawInterface(now) {
-  game.hoverTip = null;
   if (game.state === "question") {
     drawQuestionScreen(now);
     return;
@@ -3588,6 +4392,65 @@ function drawInterface(now) {
   if (game.state === "result") drawCatchResult();
   if (game.state === "archive") drawArchive();
   if (!["impact", "result", "archive"].includes(game.state)) drawBackpackButton();
+  if (isHomeButtonVisible()) drawHomeButton();
+}
+
+function isHomeButtonVisible() {
+  return HOME_BUTTON_STATES.has(game.state);
+}
+
+function drawHomeButton() {
+  const hovered = pointInRect(mouseX, mouseY, HOME_BUTTON);
+  const colour = hovered ? C.yellow : C.paper;
+  const x = HOME_BUTTON.x;
+  const y = HOME_BUTTON.y;
+  const w = HOME_BUTTON.w;
+  const h = HOME_BUTTON.h;
+
+  push();
+  noStroke();
+  fill(hovered ? "#183941" : "#10242C");
+  beginShape();
+  vertex(x + 7, y);
+  vertex(x + w - 5, y);
+  vertex(x + w, y + 6);
+  vertex(x + w - 3, y + h - 4);
+  vertex(x + w - 9, y + h);
+  vertex(x + 5, y + h - 2);
+  vertex(x, y + h - 8);
+  vertex(x + 2, y + 5);
+  endShape(CLOSE);
+
+  noFill();
+  stroke(colour);
+  strokeWeight(3);
+  beginShape();
+  vertex(x + 8, y + 3);
+  vertex(x + w - 8, y + 2);
+  vertex(x + w - 3, y + 8);
+  vertex(x + w - 6, y + h - 7);
+  vertex(x + w - 12, y + h - 3);
+  vertex(x + 7, y + h - 5);
+  vertex(x + 3, y + h - 10);
+  vertex(x + 5, y + 8);
+  endShape(CLOSE);
+
+  strokeWeight(4);
+  beginShape();
+  vertex(x + 20, y + 26);
+  vertex(x + 34, y + 14);
+  vertex(x + 48, y + 26);
+  endShape();
+  rect(x + 24, y + 26, 20, 16);
+  line(x + 34, y + 33, x + 34, y + 42);
+
+  noStroke();
+  fill(colour);
+  textAlign(CENTER, CENTER);
+  textStyle(BOLD);
+  textSize(20);
+  text("HOME", x + 108, y + h / 2 - 1);
+  pop();
 }
 
 function drawTopBar() {
@@ -3694,8 +4557,10 @@ function drawTensionMeter() {
 }
 
 function drawBitePrompt(now) {
+  const difficulty = getActiveWeatherGameplay();
   const pulse = 1 + sin(now * 0.028) * 0.045;
   push();
+  drawingContext.globalAlpha = 0.38 + difficulty.cueStrength * 0.62;
   translate(W / 2, 154);
   scale(pulse);
   noStroke();
@@ -3737,6 +4602,7 @@ function getResultTitle() {
   if (game.result === "snapped") return "THE LINE BROKE";
   if (game.result === "escaped") return "IT GOT AWAY";
   if (game.result === "missed") return "TOO LATE";
+  if (game.result === "signal") return "NO RESPONSE YET";
   return "AN EMPTY HOOK";
 }
 
@@ -3746,6 +4612,7 @@ function getResultDetail() {
   if (game.result === "snapped") return "TOO MUCH PRESSURE";
   if (game.result === "escaped") return "NOT ENOUGH TENSION";
   if (game.result === "missed") return "THE SIGNAL PASSED";
+  if (game.result === "signal") return "THE CAST WAS NOT SAVED — TRY AGAIN";
   return "THE WATER RETURNED NOTHING";
 }
 
@@ -3990,7 +4857,7 @@ function easeInCubic(value) {
   return value * value * value;
 }
 
-function drawCatchResult() {
+function drawCatchResult(awaitingAnswer = false) {
   const catchData = game.currentCatch;
   if (!catchData) return;
   const catchIndex = CATCHES.findIndex((item) => item.id === catchData.id);
@@ -4006,7 +4873,11 @@ function drawCatchResult() {
   );
   drawingContext.clip();
   drawResultLocationBackground();
-  drawSpriteContainedBottom(catchResultSprites[catchIndex], RESULT_CATCH_BOUNDS);
+  if (catchData.id === "perch") {
+    drawImageContained(juvenilePerchV2.hands, RESULT_CATCH_BOUNDS);
+  } else {
+    drawSpriteContainedBottom(catchResultSprites[catchIndex], RESULT_CATCH_BOUNDS);
+  }
   drawingContext.restore();
 
   // The selected-water background, hands and catch are intentionally drawn first.
@@ -4032,9 +4903,57 @@ function drawCatchResult() {
     RESULT_PANELS.answer.w,
     RESULT_PANELS.answer.h
   );
-  drawResultControlsV3();
+  if (awaitingAnswer) {
+    drawAwaitingAnswerInfo();
+  } else {
+    drawResultControlsV3();
+    drawCatchResultInfo(catchData, getSelectedTackle(), game.question);
+    drawBackpackFullNotice();
+  }
+}
 
-  drawCatchResultInfo(catchData, getSelectedTackle(), game.question);
+function drawAwaitingAnswerInfo() {
+  const questionPanel = RESULT_PANELS.question;
+  const answerPanel = RESULT_PANELS.answer;
+  fill("#F02B91");
+  textStyle(BOLD);
+  textSize(19);
+  text("YOUR QUESTION", questionPanel.x + 34, questionPanel.y + 38);
+  drawScrollableTextBlock(
+    game.question,
+    { x: questionPanel.x + 34, y: questionPanel.y + 67, w: questionPanel.w - 68, h: questionPanel.h - 82 },
+    "resultQuestion",
+    { fontSize: 23, lineHeight: 30, colour: "#F0E6C8", scrollColour: "#F02B91" }
+  );
+  fill("#5DD4C8");
+  textStyle(BOLD);
+  textSize(23);
+  text("REELING IN THE ANSWER", answerPanel.x + 34, answerPanel.y + 52);
+  fill("#F0E6C8");
+  textSize(30);
+  const dots = ".".repeat(1 + floor(millis() / 420) % 3);
+  text(`THE CATCH IS STILL BELOW THE SURFACE${dots}`, answerPanel.x + 34, answerPanel.y + 126);
+  fill("#8FB7B8");
+  textSize(20);
+  text("The final response will appear here when it is ready.", answerPanel.x + 34, answerPanel.y + 174);
+}
+
+function drawBackpackFullNotice() {
+  if (!game.inventoryFullAt || millis() - game.inventoryFullAt > 3400) return;
+  const bounds = { x: 505, y: 400, w: 910, h: 170 };
+  push();
+  imageMode(CORNER);
+  if (backpackFullBannerV3) image(backpackFullBannerV3, bounds.x, bounds.y, bounds.w, bounds.h);
+  fill("#F02B91");
+  textAlign(CENTER, CENTER);
+  textStyle(BOLD);
+  textSize(32);
+  text("BACKPACK FULL", bounds.x + bounds.w / 2, bounds.y + 63);
+  fill("#F0E6C8");
+  textSize(18);
+  text("32 CATCHES KEPT — RELEASE THIS CATCH TO CONTINUE", bounds.x + bounds.w / 2, bounds.y + 108);
+  textAlign(LEFT, BASELINE);
+  pop();
 }
 
 function drawResultLocationBackground() {
@@ -4062,19 +4981,6 @@ function drawImageCoverFromSource(sourceImage, sourceBounds, destination) {
     cropWidth,
     cropHeight
   );
-}
-
-function drawSaveStamp() {
-  if (!game.saveStampAt || saveStampFrames.length === 0) return;
-  const elapsed = millis() - game.saveStampAt;
-  if (elapsed > 1700) return;
-  const frame = min(saveStampFrames.length - 1, floor(elapsed / 190));
-  const stamp = saveStampFrames[frame];
-  push();
-  tint(255, elapsed > 1450 ? map(elapsed, 1450, 1700, 255, 0) : 255);
-  drawImageContained(stamp, { x: 124, y: 92, w: 884, h: 748 });
-  noTint();
-  pop();
 }
 
 function drawSpriteContainedBottom(spriteRecord, destination) {
@@ -4107,37 +5013,56 @@ function drawCatchResultInfo(catchData, profile, question) {
   textSize(19);
   text("YOUR QUESTION", questionPanel.x + textInset, questionPanel.y + 38);
   fill("#F0E6C8");
-  textStyle(NORMAL);
-  textSize(23);
-  text(
+  drawScrollableTextBlock(
     question,
-    questionPanel.x + textInset,
-    questionPanel.y + 72,
-    questionPanel.w - textInset * 2,
-    58
+    {
+      x: questionPanel.x + textInset,
+      y: questionPanel.y + 67,
+      w: questionPanel.w - textInset * 2,
+      h: questionPanel.h - 82
+    },
+    "resultQuestion",
+    { fontSize: 23, lineHeight: 30, colour: "#F0E6C8", scrollColour: "#F02B91" }
   );
 
   fill("#5DD4C8");
   textStyle(BOLD);
   textSize(20);
   text("WHAT SURFACED", answerPanel.x + textInset, answerPanel.y + 44);
-  fill("#F0E6C8");
-  textStyle(NORMAL);
-  textSize(27);
-  textWrap(WORD);
-  text(
+  if (["weeds", "rubbish"].includes(catchData.id)) {
+    fill("#F02B91");
+    textAlign(RIGHT, BASELINE);
+    text(
+      catchData.id === "rubbish" ? "CHAOTIC ANSWER" : "OFF-COURSE ANSWER",
+      answerPanel.x + answerPanel.w - textInset,
+      answerPanel.y + 44
+    );
+    textAlign(LEFT, BASELINE);
+  }
+  if (["fallback", "ai-error"].includes(catchData.aiStatus)) {
+    fill("#F02B91");
+    textAlign(RIGHT, BASELINE);
+    text("OFFLINE FALLBACK", answerPanel.x + answerPanel.w - textInset, answerPanel.y + 44);
+    textAlign(LEFT, BASELINE);
+  }
+  drawScrollableTextBlock(
     catchData.candidate,
-    answerPanel.x + textInset,
-    answerPanel.y + 88,
-    answerPanel.w - textInset * 2,
-    answerPanel.h - 112
+    {
+      x: answerPanel.x + textInset,
+      y: answerPanel.y + 82,
+      w: answerPanel.w - textInset * 2,
+      h: answerPanel.h - 158
+    },
+    "resultAnswer",
+    { fontSize: 27, lineHeight: 36, colour: "#F0E6C8", scrollColour: "#5DD4C8" }
   );
 
+  const backpackIsFull = game.inventory.length >= ARCHIVE_MAX_CATCHES && !game.currentKept;
   drawUiCenteredText(
-    game.judgement === "keep" ? "KEPT FOR REVIEW" : "KEEP FOR REVIEW",
+    backpackIsFull ? "BACKPACK FULL" : game.judgement === "keep" ? "KEPT FOR REVIEW" : "KEEP FOR REVIEW",
     RESULT_BUTTONS.keep,
     23,
-    game.judgement === "keep" ? "#5DD4C8" : "#F0E6C8",
+    backpackIsFull ? "#F02B91" : game.judgement === "keep" ? "#5DD4C8" : "#F0E6C8",
     0
   );
   drawUiCenteredText(
@@ -4195,49 +5120,6 @@ function drawResultActionLabel(label, bounds, colourValue) {
   );
 }
 
-function drawCatchInfo(catchData, x, y, w, h, profile = null, question = EXAMPLE_QUESTION) {
-  fill(C.paper);
-  noStroke();
-  rect(x, y, w, h);
-  fill(C.ink);
-  rect(x + 8, y + 8, w - 16, h - 16);
-
-  fill(C.yellow);
-  textStyle(BOLD);
-  textSize(20);
-  text("YOUR QUESTION", x + 42, y + 52);
-  fill(C.paper);
-  textStyle(NORMAL);
-  textSize(23);
-  text(question, x + 42, y + 88, w - 84, 70);
-
-  fill(C.yellow);
-  textStyle(BOLD);
-  textSize(20);
-  text("WHAT SURFACED", x + 42, y + 188);
-  fill(C.paper);
-  textStyle(NORMAL);
-  textSize(25);
-  textWrap(WORD);
-  text(catchData.candidate, x + 42, y + 226, w - 84, 220);
-
-  fill(C.yellow);
-  textStyle(BOLD);
-  textSize(20);
-  text("CATCH RECORD", x + 42, y + 508);
-  fill(C.paper);
-  textStyle(NORMAL);
-  textSize(22);
-  text(`${catchData.name}  /  ${catchData.response}`, x + 42, y + 546, w - 84, 44);
-
-  fill(C.inkSoft);
-  rect(x + 42, y + h - 54, w - 84, 2);
-  fill(C.mist);
-  textStyle(NORMAL);
-  textSize(17);
-  text("SAVED FOR REVIEW, NOT VERIFIED", x + 42, y + h - 22);
-}
-
 function getSelectedTackle() {
   return TACKLE_PROFILES.find((profile) => profile.id === game.selectedTackleId) || null;
 }
@@ -4245,34 +5127,6 @@ function getSelectedTackle() {
 function getTackleSummary(profile) {
   if (!profile) return "NO CONFIGURATION RECORDED";
   return `${TACKLE_TYPES[profile.type].name}  /  ${TACKLE_COLOURS[profile.colour].name}  /  ${TACKLE_WEIGHTS[profile.weight].name}  /  ${RETRIEVES[profile.retrieve].name}`;
-}
-
-function drawMetric(label, value, x, y, widthValue) {
-  fill(C.paper);
-  textStyle(BOLD);
-  textSize(15);
-  text(label, x, y);
-  const gap = 8;
-  const cellWidth = floor((widthValue - gap * 4) / 5);
-  for (let i = 0; i < 5; i += 1) {
-    fill(i < value ? C.yellow : C.inkSoft);
-    rect(x + i * (cellWidth + gap), y + 18, cellWidth, 16);
-  }
-  if (label === "RELEVANCE") {
-    setHoverTip({ x, y: y - 6, w: widthValue, h: 54 }, "RELEVANCE", "How closely this response addresses the question.", "A close answer may still contain errors.");
-  } else {
-    setHoverTip({ x, y: y - 6, w: widthValue, h: 54 }, "UNCERTAINTY", "How much doubt or missing context remains.", "The meter is a prompt to inspect, not a fact score.");
-  }
-}
-
-function drawUiButton(bounds, label, backgroundColour, textColour) {
-  const hover = pointInRect(mouseX, mouseY, bounds);
-  fill(C.paper);
-  noStroke();
-  rect(bounds.x, bounds.y, bounds.w, bounds.h);
-  fill(hover ? C.paper : backgroundColour);
-  rect(bounds.x + 6, bounds.y + 6, bounds.w - 12, bounds.h - 12);
-  drawUiCenteredText(label, bounds, 20, hover ? C.ink : textColour, -5);
 }
 
 function drawBackpackButton() {
@@ -4328,19 +5182,30 @@ function drawArchive() {
   text("CATCH ARCHIVE", 530, 194);
   textAlign(LEFT, BASELINE);
 
-  const visibleEntries = game.inventory.slice(0, 8);
+  const pageStart = game.archivePage * ARCHIVE_PAGE_SIZE;
+  const visibleEntries = game.inventory.slice(pageStart, pageStart + ARCHIVE_PAGE_SIZE);
   for (let index = 0; index < visibleEntries.length; index += 1) {
     const slot = getArchiveSlotBounds(index);
     const entry = visibleEntries[index];
     const catchIndex = CATCHES.findIndex((item) => item.id === entry.id);
-    drawArchiveCatchSprite(archiveCatchSprites[catchIndex], {
-      x: slot.x + 22,
-      y: slot.y + 24,
-      w: slot.w - 44,
-      h: slot.h - 48
-    });
+    if (entry.id === "perch") {
+      drawImageContained(juvenilePerchV2.fish, {
+        x: slot.x + 45,
+        y: slot.y + 54,
+        w: slot.w - 90,
+        h: slot.h - 108
+      });
+    } else {
+      drawArchiveCatchSprite(archiveCatchSprites[catchIndex], {
+        x: slot.x + 22,
+        y: slot.y + 24,
+        w: slot.w - 44,
+        h: slot.h - 48
+      });
+    }
     const hovered = pointInRect(mouseX, mouseY, slot);
-    if (index === game.archiveSelected) {
+    const globalIndex = pageStart + index;
+    if (globalIndex === game.archiveSelected) {
       image(archiveSlotFramesV2.selected, slot.x, slot.y, slot.w, slot.h);
     } else if (hovered) {
       image(archiveSlotFramesV2.hover, slot.x, slot.y, slot.w, slot.h);
@@ -4351,35 +5216,45 @@ function drawArchive() {
     fill("#F0E6C8");
     textAlign(CENTER, CENTER);
     textStyle(BOLD);
-    textSize(28);
-    text("NO CATCHES KEPT FOR REVIEW", 530, 520);
+    textSize(22);
+    text("NO CATCHES KEPT FOR REVIEW", 530, 226);
     textAlign(LEFT, BASELINE);
   }
 
-  const selectedEntry = visibleEntries[game.archiveSelected];
+  const selectedEntry = game.inventory[game.archiveSelected];
   if (selectedEntry) {
-    const catchData = CATCHES.find((item) => item.id === selectedEntry.id);
+    const definition = CATCHES.find((item) => item.id === selectedEntry.id) || CATCHES[0];
+    const catchData = {
+      ...definition,
+      candidate: selectedEntry.answer || definition.candidate,
+      summary: selectedEntry.summary || definition.summary,
+      missing: selectedEntry.missing || definition.missing,
+      response: selectedEntry.response || definition.response,
+      category: selectedEntry.category || definition.category
+    };
     const profile = TACKLE_PROFILES.find((item) => item.id === selectedEntry.tackleId) || null;
     drawArchiveInfoV2(catchData, profile, selectedEntry);
   } else {
     fill("#F02B91");
     textStyle(BOLD);
     textSize(19);
-    text("YOUR QUESTION", 1054, 144);
+    text("YOUR QUESTION", ARCHIVE_PANELS.question.x + 190, ARCHIVE_PANELS.question.y + 40);
     fill("#F0E6C8");
     textStyle(NORMAL);
     textSize(22);
     textWrap(WORD);
-    text("SELECT A SAVED CATCH", 1054, 182, 730, 46);
+    text("SELECT A SAVED CATCH", ARCHIVE_PANELS.question.x + 190, ARCHIVE_PANELS.question.y + 72, ARCHIVE_PANELS.question.w - 238, 46);
     fill("#5DD4C8");
     textStyle(BOLD);
     textSize(20);
-    text("WHAT SURFACED", 1054, 322);
+    text("WHAT SURFACED", ARCHIVE_PANELS.answer.x + 34, ARCHIVE_PANELS.answer.y + 76);
     fill("#F0E6C8");
     textStyle(NORMAL);
     textSize(24);
-    text("Choose one of the eight collection slots to inspect the response and its fishing configuration.", 1054, 366, 730, 180);
+    text("Choose a saved catch to inspect the response and its fishing configuration.", ARCHIVE_PANELS.answer.x + 34, ARCHIVE_PANELS.answer.y + 116, ARCHIVE_PANELS.answer.w - 68, 180);
   }
+
+  drawArchivePagination();
 
   const closeHover = pointInRect(mouseX, mouseY, ARCHIVE_PANELS.close);
   image(
@@ -4390,6 +5265,66 @@ function drawArchive() {
     ARCHIVE_PANELS.close.h
   );
   drawUiCenteredText("CLOSE", ARCHIVE_PANELS.close, 24, closeHover ? "#F02B91" : "#F0E6C8", 0);
+}
+
+function getArchiveTotalPages() {
+  return max(1, ceil(game.inventory.length / ARCHIVE_PAGE_SIZE));
+}
+
+function setArchivePage(nextPage) {
+  const totalPages = getArchiveTotalPages();
+  const constrainedPage = constrain(nextPage, 0, totalPages - 1);
+  if (constrainedPage === game.archivePage && game.archiveSelected >= 0) return;
+  game.archivePage = constrainedPage;
+  const pageStart = game.archivePage * ARCHIVE_PAGE_SIZE;
+  game.archiveSelected = pageStart < game.inventory.length ? pageStart : -1;
+  resetArchiveTextScroll();
+}
+
+function drawArchivePageButton(bounds, direction, enabled) {
+  const hovered = enabled && pointInRect(mouseX, mouseY, bounds);
+  push();
+  noStroke();
+  fill(enabled ? (hovered ? "#F02B91" : "#241329") : "#171019");
+  rect(bounds.x, bounds.y, bounds.w, bounds.h, 8);
+  noFill();
+  stroke(enabled ? "#F0E6C8" : "#5F5660");
+  strokeWeight(4);
+  rect(bounds.x + 3, bounds.y + 3, bounds.w - 6, bounds.h - 6, 7);
+  noStroke();
+  fill(enabled ? "#F0E6C8" : "#5F5660");
+  textAlign(CENTER, CENTER);
+  textStyle(BOLD);
+  textSize(18);
+  text(direction === "next" ? "NEXT" : "PREV", bounds.x + bounds.w / 2, bounds.y + bounds.h / 2 - 2);
+  pop();
+}
+
+function drawArchivePagination() {
+  const totalPages = getArchiveTotalPages();
+  drawArchivePageButton(ARCHIVE_PAGINATION.previous, "previous", game.archivePage > 0);
+  drawArchivePageButton(ARCHIVE_PAGINATION.next, "next", game.archivePage < totalPages - 1);
+  push();
+  noStroke();
+  fill("#241329");
+  rect(ARCHIVE_PAGINATION.label.x, ARCHIVE_PAGINATION.label.y - 7, ARCHIVE_PAGINATION.label.w, 68, 8);
+  noFill();
+  stroke("#F0E6C8");
+  strokeWeight(4);
+  rect(ARCHIVE_PAGINATION.label.x + 3, ARCHIVE_PAGINATION.label.y - 4, ARCHIVE_PAGINATION.label.w - 6, 62, 7);
+  pop();
+  fill(game.inventory.length >= ARCHIVE_MAX_CATCHES ? "#F02B91" : "#F0E6C8");
+  textStyle(BOLD);
+  textAlign(CENTER, CENTER);
+  textSize(19);
+  text(`PAGE ${game.archivePage + 1} / ${totalPages}`, ARCHIVE_PAGINATION.label.x + ARCHIVE_PAGINATION.label.w / 2, ARCHIVE_PAGINATION.label.y + 17);
+  fill(game.inventory.length >= ARCHIVE_MAX_CATCHES ? "#F02B91" : "#8FB7B8");
+  textSize(game.inventory.length >= ARCHIVE_MAX_CATCHES ? 11 : 14);
+  const capacityLabel = game.inventory.length >= ARCHIVE_MAX_CATCHES
+    ? `${game.inventory.length} / ${ARCHIVE_MAX_CATCHES}  FULL`
+    : `${game.inventory.length} / ${ARCHIVE_MAX_CATCHES}`;
+  text(capacityLabel, ARCHIVE_PAGINATION.label.x + ARCHIVE_PAGINATION.label.w / 2, ARCHIVE_PAGINATION.label.y + 41);
+  textAlign(LEFT, BASELINE);
 }
 
 function drawArchiveInfoV2(catchData, profile, selectedEntry) {
@@ -4404,20 +5339,43 @@ function drawArchiveInfoV2(catchData, profile, selectedEntry) {
   textStyle(BOLD);
   textSize(22);
   text("YOUR QUESTION", questionPanel.x + questionInset, questionPanel.y + 40);
-  fill("#F0E6C8");
-  textStyle(NORMAL);
-  textSize(27);
-  text(selectedEntry.question || EXAMPLE_QUESTION, questionPanel.x + questionInset, questionPanel.y + 76, questionPanel.w - questionInset - 48, 56);
+  drawScrollableTextBlock(
+    selectedEntry.question || EXAMPLE_QUESTION,
+    {
+      x: questionPanel.x + questionInset,
+      y: questionPanel.y + 72,
+      w: questionPanel.w - questionInset - 48,
+      h: questionPanel.h - 88
+    },
+    "archiveQuestion",
+    { fontSize: 27, lineHeight: 34, colour: "#F0E6C8", scrollColour: "#F02B91" }
+  );
 
   fill("#5DD4C8");
   textStyle(BOLD);
   textSize(24);
   text("WHAT SURFACED", answerPanel.x + answerInset, answerPanel.y + 76);
-  fill("#F0E6C8");
-  textStyle(NORMAL);
-  textSize(30);
-  textWrap(WORD);
-  text(catchData.candidate, answerPanel.x + answerInset, answerPanel.y + 120, answerPanel.w - answerInset * 2, answerPanel.h - 148);
+  if (["weeds", "rubbish"].includes(catchData.id)) {
+    fill("#F02B91");
+    textAlign(RIGHT, BASELINE);
+    text(
+      catchData.id === "rubbish" ? "CHAOTIC ANSWER" : "OFF-COURSE ANSWER",
+      answerPanel.x + answerPanel.w - answerInset,
+      answerPanel.y + 76
+    );
+    textAlign(LEFT, BASELINE);
+  }
+  drawScrollableTextBlock(
+    selectedEntry.answer || catchData.candidate,
+    {
+      x: answerPanel.x + answerInset,
+      y: answerPanel.y + 116,
+      w: answerPanel.w - answerInset * 2,
+      h: answerPanel.h - 229
+    },
+    "archiveAnswer",
+    { fontSize: 30, lineHeight: 39, colour: "#F0E6C8", scrollColour: "#5DD4C8" }
+  );
 
   fill("#F0C64F");
   textStyle(BOLD);
@@ -4426,7 +5384,7 @@ function drawArchiveInfoV2(catchData, profile, selectedEntry) {
   fill("#F0E6C8");
   textStyle(NORMAL);
   textSize(24);
-  text(`${catchData.name}  /  ${catchData.response}`, recordPanel.x + recordInset, recordPanel.y + 98);
+  text(`${catchData.name}  /  ${selectedEntry.response || catchData.response}`, recordPanel.x + recordInset, recordPanel.y + 98);
   fill("#8FB7B8");
   textSize(20);
   text(getTackleSummary(profile), recordPanel.x + recordInset, recordPanel.y + 138, recordPanel.w - recordInset - 42, 26);
@@ -4443,10 +5401,11 @@ function pointInRect(x, y, bounds) {
 }
 
 function getArchiveSlotAt(x, y) {
-  const visibleCount = min(8, game.inventory.length);
+  const pageStart = game.archivePage * ARCHIVE_PAGE_SIZE;
+  const visibleCount = min(ARCHIVE_PAGE_SIZE, max(0, game.inventory.length - pageStart));
   for (let index = 0; index < visibleCount; index += 1) {
     const slot = getArchiveSlotBounds(index);
-    if (pointInRect(x, y, slot)) return index;
+    if (pointInRect(x, y, slot)) return pageStart + index;
   }
   return -1;
 }
@@ -4462,7 +5421,163 @@ function getArchiveSlotBounds(index) {
   };
 }
 
-function mousePressed() {
+function getCanvasEventPoint(event) {
+  const canvas = document.querySelector("#canvasWrap canvas");
+  const rect = canvas?.getBoundingClientRect();
+  if (
+    rect &&
+    rect.width > 0 &&
+    rect.height > 0 &&
+    Number.isFinite(event?.clientX) &&
+    Number.isFinite(event?.clientY)
+  ) {
+    return {
+      x: (event.clientX - rect.left) * W / rect.width,
+      y: (event.clientY - rect.top) * H / rect.height
+    };
+  }
+  return { x: mouseX, y: mouseY };
+}
+
+function setupExhibitionStartButtonOverlay() {
+  const createOverlayButton = (label, onClick, onHover) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.tabIndex = -1;
+    button.setAttribute("aria-label", label);
+    Object.assign(button.style, {
+      position: "fixed",
+      zIndex: "20",
+      margin: "0",
+      padding: "0",
+      border: "0",
+      background: "transparent",
+      opacity: "0",
+      cursor: "pointer"
+    });
+    button.addEventListener("mouseenter", () => onHover(true));
+    button.addEventListener("mouseleave", () => onHover(false));
+    button.addEventListener("click", (event) => {
+      event.stopPropagation();
+      onClick();
+    });
+    document.body.appendChild(button);
+    return button;
+  };
+
+  exhibitionStartButtonElement = createOverlayButton(
+    "Start Experience",
+    () => {
+      if (game.state === "cover") beginExhibitionSession();
+    },
+    (hovered) => {
+      exhibitionStartButtonHovered = hovered;
+    }
+  );
+  exhibitionHowToButtonElement = createOverlayButton(
+    "How to Play",
+    openHowToPage,
+    (hovered) => {
+      exhibitionHowToButtonHovered = hovered;
+    }
+  );
+  howToCloseButtonElement = createOverlayButton(
+    "Close How to Play",
+    closeHowToPage,
+    (hovered) => {
+      howToCloseButtonHovered = hovered;
+    }
+  );
+  howToPrevButtonElement = createOverlayButton(
+    "Previous instruction page",
+    () => changeHowToPage(-1),
+    (hovered) => {
+      howToPrevButtonHovered = hovered;
+    }
+  );
+  howToNextButtonElement = createOverlayButton(
+    "Next instruction page",
+    () => changeHowToPage(1),
+    (hovered) => {
+      howToNextButtonHovered = hovered;
+    }
+  );
+  syncExhibitionStartButtonOverlay();
+}
+
+function positionExhibitionOverlayButton(element, bounds, visible, canvasRect) {
+  if (!element) return;
+  element.style.display = visible ? "block" : "none";
+  if (!visible) return;
+  element.style.left = `${canvasRect.left + bounds.x * canvasRect.width / W}px`;
+  element.style.top = `${canvasRect.top + bounds.y * canvasRect.height / H}px`;
+  element.style.width = `${bounds.w * canvasRect.width / W}px`;
+  element.style.height = `${bounds.h * canvasRect.height / H}px`;
+}
+
+function syncExhibitionStartButtonOverlay() {
+  if (!exhibitionStartButtonElement) return;
+  const canvas = document.querySelector("#canvasWrap canvas");
+  const rect = canvas?.getBoundingClientRect();
+  const hasCanvas = Boolean(rect && rect.width > 0 && rect.height > 0);
+  const coverVisible = hasCanvas && game.state === "cover";
+  const howToVisible = hasCanvas && game.state === "howTo";
+
+  positionExhibitionOverlayButton(exhibitionStartButtonElement, EXHIBITION_START_BUTTON, coverVisible, rect);
+  positionExhibitionOverlayButton(exhibitionHowToButtonElement, EXHIBITION_HOW_TO_BUTTON, coverVisible, rect);
+  positionExhibitionOverlayButton(howToCloseButtonElement, HOW_TO_CLOSE_BUTTON, howToVisible, rect);
+  positionExhibitionOverlayButton(howToPrevButtonElement, HOW_TO_PREV_BUTTON, howToVisible && howToPageIndex > 0, rect);
+  positionExhibitionOverlayButton(howToNextButtonElement, HOW_TO_NEXT_BUTTON, howToVisible, rect);
+  if (howToNextButtonElement) {
+    howToNextButtonElement.setAttribute(
+      "aria-label",
+      howToPageIndex === howToPages.length - 1 ? "Back to cover" : "Next instruction page"
+    );
+  }
+
+  if (!coverVisible) {
+    exhibitionStartButtonHovered = false;
+    exhibitionHowToButtonHovered = false;
+  }
+  if (!howToVisible) {
+    howToCloseButtonHovered = false;
+    howToPrevButtonHovered = false;
+    howToNextButtonHovered = false;
+  }
+}
+
+function handleExhibitionCoverClick(event) {
+  const pointer = getCanvasEventPoint(event);
+  if (game.state === "cover") {
+    if (pointInRect(pointer.x, pointer.y, EXHIBITION_START_BUTTON)) {
+      beginExhibitionSession();
+    } else if (pointInRect(pointer.x, pointer.y, EXHIBITION_HOW_TO_BUTTON)) {
+      openHowToPage();
+    }
+  } else if (game.state === "howTo") {
+    if (pointInRect(pointer.x, pointer.y, HOW_TO_CLOSE_BUTTON)) closeHowToPage();
+  }
+}
+
+function mousePressed(event) {
+  if (game.state === "cover") {
+    const pointer = getCanvasEventPoint(event);
+    if (pointInRect(pointer.x, pointer.y, EXHIBITION_START_BUTTON)) {
+      beginExhibitionSession();
+    } else if (pointInRect(pointer.x, pointer.y, EXHIBITION_HOW_TO_BUTTON)) {
+      openHowToPage();
+    }
+    return false;
+  }
+  if (game.state === "howTo") {
+    const pointer = getCanvasEventPoint(event);
+    if (pointInRect(pointer.x, pointer.y, HOW_TO_CLOSE_BUTTON)) closeHowToPage();
+    return false;
+  }
+  if (isHomeButtonVisible() && pointInRect(mouseX, mouseY, HOME_BUTTON)) {
+    goHome();
+    return false;
+  }
   if (game.state === "impact") return false;
 
   if (game.state === "weather") {
@@ -4487,6 +5602,7 @@ function mousePressed() {
     if (locationIndex >= 0) {
       game.waterIndex = locationIndex;
       game.waterSelectAt = millis();
+      ensureLocationSceneFrames(WATER_LOCATIONS[locationIndex]?.id);
       updateAccessibleStatus();
     } else if (pointInRect(pointer.x, pointer.y, WATER_SELECT_BOUNDS.back)) {
       returnToWeather();
@@ -4501,30 +5617,32 @@ function mousePressed() {
 
   if (game.state === "livingQuestion") {
     if (pointInRect(mouseX, mouseY, LIVING_QUESTION_BOUNDS.input)) {
-      game.questionFocused = true;
+      setQuestionFocus(true);
     } else if (pointInRect(mouseX, mouseY, LIVING_QUESTION_BOUNDS.example)) {
       game.question = EXAMPLE_QUESTION;
-      game.questionFocused = true;
+      syncQuestionInputValue(true);
+      setQuestionFocus(true);
       noteQuestionEdit();
     } else if (pointInRect(mouseX, mouseY, LIVING_QUESTION_BOUNDS.confirm)) {
       confirmQuestion();
     } else {
-      game.questionFocused = false;
+      setQuestionFocus(false);
     }
     return false;
   }
 
   if (game.state === "question") {
     if (pointInRect(mouseX, mouseY, QUESTION_BOUNDS.input)) {
-      game.questionFocused = true;
+      setQuestionFocus(true);
     } else if (pointInRect(mouseX, mouseY, QUESTION_BOUNDS.example)) {
       game.question = EXAMPLE_QUESTION;
-      game.questionFocused = true;
+      syncQuestionInputValue(true);
+      setQuestionFocus(true);
       noteQuestionEdit();
     } else if (pointInRect(mouseX, mouseY, QUESTION_BOUNDS.confirm)) {
       confirmQuestion();
     } else {
-      game.questionFocused = false;
+      setQuestionFocus(false);
     }
     return false;
   }
@@ -4543,7 +5661,7 @@ function mousePressed() {
     }
     if (pointInRect(mouseX, mouseY, TACKLE_BOUNDS.back)) {
       setState("livingQuestion");
-      game.questionFocused = true;
+      setQuestionFocus(true);
     } else if (pointInRect(mouseX, mouseY, TACKLE_BOUNDS.confirm)) {
       beginFishingWithTackle();
     }
@@ -4571,7 +5689,15 @@ function mousePressed() {
 
   if (game.state === "archive") {
     const slotIndex = getArchiveSlotAt(mouseX, mouseY);
-    if (slotIndex >= 0) game.archiveSelected = slotIndex;
+    if (slotIndex >= 0) {
+      game.archiveSelected = slotIndex;
+      resetArchiveTextScroll();
+    }
+    if (pointInRect(mouseX, mouseY, ARCHIVE_PAGINATION.previous) && game.archivePage > 0) {
+      setArchivePage(game.archivePage - 1);
+    } else if (pointInRect(mouseX, mouseY, ARCHIVE_PAGINATION.next) && game.archivePage < getArchiveTotalPages() - 1) {
+      setArchivePage(game.archivePage + 1);
+    }
     if (pointInRect(mouseX, mouseY, ARCHIVE_PANELS.close)) closeArchive();
     return false;
   }
@@ -4605,7 +5731,51 @@ function mouseReleased() {
   return false;
 }
 
+function mouseWheel(event) {
+  const delta = Number(event?.deltaY ?? event?.delta ?? 0);
+  for (let index = activeScrollRegions.length - 1; index >= 0; index -= 1) {
+    const region = activeScrollRegions[index];
+    if (!pointInRect(mouseX, mouseY, region.bounds) || region.maxScroll <= 0) continue;
+    const direction = delta === 0 ? 0 : delta > 0 ? 1 : -1;
+    game.textScroll[region.key] = constrain(
+      (game.textScroll[region.key] || 0) + direction * region.step,
+      0,
+      region.maxScroll
+    );
+    return false;
+  }
+  if (game.state === "archive" && pointInRect(mouseX, mouseY, ARCHIVE_COLLECTION_BOUNDS) && delta !== 0) {
+    setArchivePage(game.archivePage + (delta > 0 ? 1 : -1));
+    return false;
+  }
+  return true;
+}
+
 function keyPressed() {
+  if (game.state === "howTo") {
+    if (keyCode === LEFT_ARROW) {
+      changeHowToPage(-1);
+      return false;
+    }
+    if (keyCode === RIGHT_ARROW) {
+      changeHowToPage(1);
+      return false;
+    }
+    if (keyCode === ESCAPE) {
+      closeHowToPage();
+      return false;
+    }
+    return true;
+  }
+  if (game.state === "cover") {
+    // The cover starts only from its button, but browser shortcuts such as
+    // F11 must keep their native behaviour for exhibition fullscreen mode.
+    return true;
+  }
+  // The Space key used to skip a cutscene may continue producing key-repeat
+  // events after the destination state is entered. Do not let that same hold
+  // confirm weather, choose a water or advance another screen before release.
+  if (game.skipConsumed && (key === " " || keyCode === 32)) return false;
   if (game.state === "weather" && (keyCode === ENTER || keyCode === RETURN || key === " ")) {
     const weather = WEATHER_CONDITIONS[game.weatherIndex];
     const weatherReady = weather && weatherFrameLoadState[weather.id] === "ready";
@@ -4621,15 +5791,18 @@ function keyPressed() {
     } else if (keyCode === LEFT_ARROW || keyCode === UP_ARROW) {
       game.waterIndex = (game.waterIndex + WATER_LOCATIONS.length - 1) % WATER_LOCATIONS.length;
       game.waterSelectAt = millis();
+      ensureLocationSceneFrames(WATER_LOCATIONS[game.waterIndex]?.id);
       updateAccessibleStatus();
     } else if (keyCode === RIGHT_ARROW || keyCode === DOWN_ARROW) {
       game.waterIndex = (game.waterIndex + 1) % WATER_LOCATIONS.length;
       game.waterSelectAt = millis();
+      ensureLocationSceneFrames(WATER_LOCATIONS[game.waterIndex]?.id);
       updateAccessibleStatus();
     } else if (keyCode === ENTER || keyCode === RETURN || key === " ") {
       if (game.waterIndex < 0) {
         game.waterIndex = 0;
         game.waterSelectAt = millis();
+        ensureLocationSceneFrames(WATER_LOCATIONS[game.waterIndex]?.id);
         updateAccessibleStatus();
       } else {
         confirmWaterSelection();
@@ -4639,53 +5812,132 @@ function keyPressed() {
   }
 
   if (["question", "livingQuestion"].includes(game.state)) {
-    if (keyCode === BACKSPACE || keyCode === DELETE) {
-      game.question = game.question.slice(0, -1);
-      noteQuestionEdit();
-      return false;
-    }
-    if (keyCode === ENTER || keyCode === RETURN) {
-      confirmQuestion();
-      return false;
-    }
-    if (keyCode === ESCAPE) game.questionFocused = false;
+    if (keyCode === ESCAPE) setQuestionFocus(false);
     return true;
   }
   if (game.state === "tackle" && keyCode === ESCAPE) {
     setState("livingQuestion");
-    game.questionFocused = true;
+    setQuestionFocus(true);
     return false;
   }
-  if (game.state === "archive" && keyCode === ESCAPE) closeArchive();
+  if (game.state === "archive" && keyCode === LEFT_ARROW) setArchivePage(game.archivePage - 1);
+  else if (game.state === "archive" && keyCode === RIGHT_ARROW) setArchivePage(game.archivePage + 1);
+  else if (game.state === "archive" && keyCode === ESCAPE) closeArchive();
   else if (key === "r" || key === "R" || keyCode === ESCAPE) resetCast();
 }
 
 function keyTyped() {
-  if (!["question", "livingQuestion"].includes(game.state) || !game.questionFocused) return true;
-  if (key.length === 1 && key.charCodeAt(0) >= 32 && game.question.length < 140) {
-    game.question += key;
-    noteQuestionEdit();
-    return false;
-  }
+  // Question entry is handled by the native textarea so paste, key repeat,
+  // selection, deletion and IME composition behave like a normal text field.
   return true;
 }
 
 function confirmQuestion() {
   game.question = game.question.trim();
   if (!game.question || game.targetLockAt > 0) return;
-  game.questionFocused = false;
+  requestAiRecommendation(game.question);
+  syncQuestionInputValue();
+  setQuestionFocus(false);
   game.targetLockAt = millis();
+}
+
+function requestAiRecommendation(question) {
+  const fallback = buildLocalRecommendation(question);
+  const sessionIdSnapshot = game.exhibitionSessionId;
+  game.aiRecommendation = { ...fallback, status: "requesting" };
+  const adapter = window.AnglerAI;
+  if (!adapter || typeof adapter.recommend !== "function") {
+    game.aiRecommendation = fallback;
+    return;
+  }
+
+  const questionSnapshot = question;
+  adapter.recommend({
+    question,
+    waters: WATER_LOCATIONS.map(({ id, model, note }) => ({ id, model, note })),
+    tackles: TACKLE_PROFILES.map(({ id, name, why }) => ({ id, name, why }))
+  }).then((recommendation) => {
+    if (game.exhibitionSessionId !== sessionIdSnapshot || !game.exhibitionSessionActive) return;
+    if (game.question !== questionSnapshot) return;
+    game.aiRecommendation = recommendation;
+    game.recommendationDeck = [];
+    if (game.state === "tackle" && game.selectedRecommendation < 0) refreshRecommendations();
+    updateAccessibleStatus();
+  }).catch((error) => {
+    if (game.exhibitionSessionId !== sessionIdSnapshot || !game.exhibitionSessionActive) return;
+    if (game.question !== questionSnapshot) return;
+    game.aiRecommendation = {
+      ...fallback,
+      status: "fallback",
+      error: error instanceof Error ? error.message : String(error)
+    };
+  });
+}
+
+// Deterministic local recommendation remains available if the server AI fails,
+// without changing either selection screen or player choice handling.
+function buildLocalRecommendation(question) {
+  const normalized = question.toLowerCase();
+  const searchTerms = /\b(search|look up|online|web|official|sources?|verify|forum|forums|reddit|community posts?|reviews?|latest posts?|opening hours|live score)\b|搜索|联网|网上查|查一下|官网|官方资料|来源|论坛|小红书|帖子|最新消息/;
+  const comparisonTerms = /\b(compare|comparison|versus|vs\.?|alternatives?|multiple routes?|trade-?offs?|pros and cons|break down|complex relationship)\b|比较|对比|多个方案|几条路线|不同路线|取舍|利弊|拆解|复杂关系/;
+  const personalTerms = /\b(my|me|i |prefer|preference|family|children|budget|accessible|personal|local)\b/;
+  const evidenceTerms = /\b(source|evidence|verify|check|accurate|current|latest|open|price|booking)\b/;
+
+  let waterId = "daylight-river";
+  let waterReason = "A direct, general and clear answer is the best starting route for this question.";
+  if (searchTerms.test(normalized)) {
+    waterId = "signal-canal";
+    waterReason = "The question explicitly benefits from searching and organising online or source-based information.";
+  } else if (comparisonTerms.test(normalized)) {
+    waterId = "sunken-reservoir";
+    waterReason = "The question explicitly asks to compare routes, alternatives or trade-offs.";
+  }
+
+  let tackleId = "quick";
+  let tackleReason = "A direct, concise first pass fits the question.";
+  if (evidenceTerms.test(normalized)) {
+    tackleId = "evidence";
+    tackleReason = "Evidence-led tackle asks the future answer to check current claims.";
+  } else if (/\b(compare|comparison|versus|vs\.?|options?|trade-?offs?)\b/.test(normalized)) {
+    tackleId = "compare";
+    tackleReason = "Comparative tackle keeps several options visible.";
+  } else if (/\b(plan|planning|itinerary|route|steps|schedule)\b/.test(normalized)) {
+    tackleId = "checked";
+    tackleReason = "Checked tackle supports a structured plan and review pass.";
+  } else if (personalTerms.test(normalized)) {
+    tackleId = "personal";
+    tackleReason = "Context-rich tackle can preserve the user's preferences.";
+  } else if (/\b(why|explain|unclear|help me decide)\b/.test(normalized)) {
+    tackleId = "careful";
+    tackleReason = "Clarifying tackle makes assumptions visible before answering.";
+  }
+
+  return {
+    status: "local-fallback",
+    source: "local-heuristic",
+    revision: AI_PREP_REVISION,
+    waterId,
+    tackleId,
+    waterReason,
+    tackleReason,
+    questionSnapshot: question
+  };
 }
 
 function refreshRecommendations() {
   const next = [];
+  const recommendedIndex = TACKLE_PROFILES.findIndex(
+    (profile) => profile.id === game.aiRecommendation?.tackleId
+  );
+  if (recommendedIndex >= 0) next.push(recommendedIndex);
   while (next.length < 3) {
     if (game.recommendationDeck.length === 0) {
       game.recommendationDeck = shuffle(TACKLE_PROFILES.map((_, index) => index), true);
     }
-    next.push(game.recommendationDeck.shift());
+    const candidate = game.recommendationDeck.shift();
+    if (!next.includes(candidate)) next.push(candidate);
   }
-  game.recommendations = next;
+  game.recommendations = shuffle(next, true);
   game.selectedRecommendation = -1;
 }
 
@@ -4694,38 +5946,48 @@ function beginFishingWithTackle() {
   const profileIndex = game.recommendations[game.selectedRecommendation];
   const profile = TACKLE_PROFILES[profileIndex];
   game.selectedTackleId = profile.id;
+  stopToolboxRummagingSound();
+  fadeOutCoverJourneyMusic(1200);
   if (game.weatherIndex < 0) game.weatherIndex = floor(random(WEATHER_CONDITIONS.length));
   ensureWeatherSceneFrames(WEATHER_CONDITIONS[game.weatherIndex].id);
   prepareCast(false);
 }
 
 function startNewTarget() {
+  // A completed catch may still have an AI promise in flight. Invalidate it
+  // before clearing the target so a late response cannot update the new run.
+  window.AnglerAI?.cancelAll?.();
+  stopFishingSceneMusic();
+  startCoverJourneyMusic();
   game.question = "";
   game.questionFocused = true;
+  syncQuestionInputValue(true);
+  resetTextScroll("livingQuestionInput", "questionInput");
+  game.aiRecommendation = null;
   game.targetShadowIndex = 0;
   game.lastQuestionEditAt = 0;
   game.selectedTackleId = null;
   game.selectedRecommendation = -1;
   game.recommendationDeck = [];
   game.currentCatch = null;
+  game.currentCast = null;
+  game.recentCastSignatures = [];
   game.judgement = null;
   game.currentKept = false;
   game.targetLockAt = 0;
-  game.saveStampAt = 0;
   game.waterIndex = -1;
   game.waterSelectAt = 0;
-  setState("livingQuestion");
+  setState(window.AnglerGameFlow.FLOW_TARGETS.NEW_TARGET);
 }
 
 function startLocationChange() {
+  setState("waterSelect");
   game.waterSelectOrigin = "result";
   game.waterSelectAt = millis();
-  game.state = "waterSelect";
-  game.stateStarted = millis();
-  updateAccessibleStatus();
 }
 
 function castLine() {
+  playCastingSounds();
   game.castPower = constrain(game.charge, 0.16, 1);
   const distance = map(game.castPower, 0.16, 1, 120, 340);
   game.castTarget.y = constrain(790 - distance * 0.42, 545, 745);
@@ -4733,17 +5995,25 @@ function castLine() {
   const safeCast = clampLureForFish(aimX, game.castTarget.y);
   game.castTarget.x = safeCast.x;
   game.castTarget.y = safeCast.y;
+  game.currentCast = createCastRecord();
+  requestAiCatch(game.currentCast);
   game.retrieve = 0;
   game.shake = 2;
   setState("flying");
 }
 
 function beginBite() {
-  game.biteWindow = 2.4;
+  const difficulty = getActiveWeatherGameplay();
+  game.biteWindow = difficulty.biteWindow;
   game.flash = 1;
   game.shake = 4;
   addSplash(game.lure.x, game.lure.y, 16);
   setState("bite");
+}
+
+function getActiveWeatherGameplay() {
+  const weather = WEATHER_CONDITIONS[game.weatherIndex] || WEATHER_CONDITIONS[0];
+  return WEATHER_GAMEPLAY_PROFILES[weather.id] || WEATHER_GAMEPLAY_PROFILES.sunny;
 }
 
 function hookFish() {
@@ -4755,51 +6025,268 @@ function hookFish() {
   setState("hooked");
 }
 
+function createCastRecord() {
+  const weatherId = WEATHER_CONDITIONS[game.weatherIndex]?.id || "sunny";
+  const waterId = WATER_LOCATIONS[game.waterIndex]?.id || "daylight-river";
+  const tackleId = game.selectedTackleId || TACKLE_PROFILES[0].id;
+  const variationAngle = chooseCastVariationAngle();
+  const catchId = chooseWeatherWeightedCatch(weatherId);
+  const record = {
+    id: `cast-${Date.now()}-${game.runNumber}-${floor(random(1000, 9999))}`,
+    sessionId: game.exhibitionSessionId,
+    castNumber: game.runNumber,
+    status: "prepared",
+    revision: AI_PREP_REVISION,
+    question: game.question,
+    waterId,
+    tackleId,
+    weatherId,
+    variationAngle,
+    catchId,
+    answer: null,
+    summary: null,
+    missing: [],
+    aiStatus: "not-requested",
+    requiresGeneration: true
+  };
+  record.requestPayload = buildAiRequestPayload(record);
+  return record;
+}
+
+function buildAiRequestPayload(castRecord) {
+  const water = WATER_LOCATIONS.find((item) => item.id === castRecord.waterId) || WATER_LOCATIONS[0];
+  const tackle = TACKLE_PROFILES.find((item) => item.id === castRecord.tackleId) || TACKLE_PROFILES[0];
+  const catchDefinition = CATCHES.find((item) => item.id === castRecord.catchId) || CATCHES[0];
+  return {
+    schemaVersion: AI_PREP_REVISION,
+    requestId: castRecord.id,
+    question: castRecord.question,
+    modelSelection: {
+      waterId: water.id,
+      modelLabel: water.model,
+      purpose: water.note
+    },
+    promptConfiguration: {
+      tackleId: tackle.id,
+      type: TACKLE_TYPES[tackle.type],
+      colour: TACKLE_COLOURS[tackle.colour],
+      weight: TACKLE_WEIGHTS[tackle.weight],
+      retrieve: RETRIEVES[tackle.retrieve],
+      rationale: tackle.why
+    },
+    answerShape: {
+      catchId: catchDefinition.id,
+      displayLabel: catchDefinition.response,
+      guidance: CATCH_GENERATION_GUIDANCE[catchDefinition.id],
+      variationAngle: castRecord.variationAngle
+    },
+    gameplayTelemetry: {
+      weatherId: castRecord.weatherId,
+      note: "Weather selected the gameplay difficulty and answer archetype probability; it must not rewrite the user's question."
+    },
+    avoidRepeating: game.recentCastSignatures.slice(0, 5),
+    expectedOutput: {
+      answer: "string",
+      summary: "string",
+      missing: "string[]",
+      answerFingerprint: "string"
+    }
+  };
+}
+
+function requestAiCatch(castRecord) {
+  const adapter = window.AnglerAI;
+  if (!adapter || typeof adapter.generate !== "function") {
+    castRecord.aiStatus = "ai-error";
+    castRecord.aiError = "The AI service is not available.";
+    return;
+  }
+  castRecord.aiStatus = "ai-pending";
+  adapter.generate(castRecord.requestPayload).then((result) => {
+    if (castRecord.sessionId !== game.exhibitionSessionId || !game.exhibitionSessionActive) return;
+    castRecord.answer = window.AnglerCatchAnswers.shapeResponseAnswer(result, castRecord.catchId);
+    castRecord.summary = result.summary;
+    castRecord.missing = Array.isArray(result.missing) ? [...result.missing] : [];
+    castRecord.answerFingerprint = result.answerFingerprint || null;
+    castRecord.aiStatus = result.source || "openai";
+    castRecord.aiRevision = result.revision || null;
+    applyGeneratedAnswer(castRecord);
+  }).catch((error) => {
+    if (castRecord.sessionId !== game.exhibitionSessionId || !game.exhibitionSessionActive) return;
+    castRecord.aiStatus = "ai-error";
+    castRecord.aiError = error instanceof Error ? error.message : String(error);
+    applyGeneratedAnswer(castRecord);
+  });
+}
+
+function applyGeneratedAnswer(castRecord) {
+  if (castRecord.sessionId !== game.exhibitionSessionId || !game.exhibitionSessionActive) return;
+  if (game.currentCast?.id === castRecord.id && game.currentCatch?.castId === castRecord.id) {
+    game.currentCatch = buildRuntimeCatch(castRecord);
+    game.result = game.currentCatch.id;
+    resetTextScroll("resultAnswer");
+  }
+  const savedEntry = game.inventory.find((entry) => entry.castId === castRecord.id);
+  if (savedEntry) {
+    savedEntry.answer = castRecord.answer;
+    savedEntry.summary = castRecord.summary;
+    savedEntry.missing = [...castRecord.missing];
+    savedEntry.aiStatus = castRecord.aiStatus;
+    savedEntry.aiRevision = castRecord.aiRevision;
+    savedEntry.answerFingerprint = castRecord.answerFingerprint;
+  }
+}
+
+function finishLandingTransition() {
+  setState(window.AnglerGameFlow.FLOW_TARGETS.LANDING_COMPLETE);
+}
+
+function isCastAnswerReady(castRecord) {
+  return Boolean(
+    castRecord
+    && castRecord.aiStatus === "openai"
+    && typeof castRecord.answer === "string"
+    && castRecord.answer.trim().length > 0
+  );
+}
+
+function chooseCastVariationAngle() {
+  const previous = game.recentCastSignatures[0]?.variationAngle || null;
+  const available = CAST_VARIATION_ANGLES.filter((angle) => angle !== previous);
+  return random(available.length > 0 ? available : CAST_VARIATION_ANGLES);
+}
+
+function chooseWeatherWeightedCatch(weatherId) {
+  return window.AnglerGameRules.chooseWeatherCatch(weatherId, random());
+}
+
+function buildFallbackCatch(catchId, castRecord) {
+  const definition = CATCHES.find((item) => item.id === catchId) || CATCHES[0];
+  const question = castRecord?.question || game.question || EXAMPLE_QUESTION;
+  let candidate = definition.candidate;
+  if (question !== EXAMPLE_QUESTION) {
+    const quotedQuestion = `“${question}”`;
+    const fallbacks = {
+      bass: `A full response to ${quotedQuestion} would give a clear recommendation, explain its reasoning and identify details that still need checking.`,
+      trout: `A useful response to ${quotedQuestion} would combine a direct answer with a small number of practical next steps.`,
+      pike: `One confident route through ${quotedQuestion} is presented strongly, but its certainty still needs evidence and comparison.`,
+      perch: `Brief answer to ${quotedQuestion}: begin with the most relevant option, then verify the important details.`,
+      carp: `For ${quotedQuestion}, there are many possibilities, exceptions, examples, alternatives and side routes; the volume is useful but the priority is unclear.`,
+      weeds: `This response notices ${quotedQuestion}, then drifts into a nearby topic without completing the requested task.`,
+      rubbish: `About ${quotedQuestion}: start everywhere—no, start at the end; repeat the premise, mix the steps, add three side routes, then return without a conclusion.`,
+      boot: `This response addresses ${quotedQuestion} using advice whose date and present-day validity are not established.`
+    };
+    candidate = fallbacks[definition.id] || candidate;
+  }
+  return {
+    ...definition,
+    candidate,
+    aiStatus: "fallback",
+    requiresGeneration: true,
+    variationAngle: castRecord?.variationAngle || null,
+    castId: castRecord?.id || null
+  };
+}
+
+function buildRuntimeCatch(castRecord) {
+  const fallback = buildFallbackCatch(castRecord.catchId, castRecord);
+  if (!castRecord.answer) {
+    return { ...fallback, aiStatus: castRecord.aiStatus || fallback.aiStatus };
+  }
+  return {
+    ...fallback,
+    candidate: castRecord.answer,
+    summary: castRecord.summary || fallback.summary,
+    missing: castRecord.missing?.length ? [...castRecord.missing] : fallback.missing,
+    aiStatus: castRecord.aiStatus,
+    aiRevision: castRecord.aiRevision || null,
+    answerFingerprint: castRecord.answerFingerprint || null,
+    requiresGeneration: false
+  };
+}
+
 function landRandomCatch() {
-  const index = floor(random(CATCHES.length));
-  game.currentCatch = CATCHES[index];
+  if (!game.currentCast) game.currentCast = createCastRecord();
+  if (!isCastAnswerReady(game.currentCast)) return;
+  game.currentCast.status = "landed";
+  game.currentCatch = buildRuntimeCatch(game.currentCast);
+  game.recentCastSignatures.unshift({
+    catchId: game.currentCatch.id,
+    variationAngle: game.currentCast.variationAngle,
+    castId: game.currentCast.id
+  });
+  if (game.recentCastSignatures.length > 8) game.recentCastSignatures.length = 8;
   game.result = game.currentCatch.id;
   game.shake = 6;
   game.flash = 0.72;
   game.judgement = null;
   game.currentKept = false;
+  game.inventoryFullAt = 0;
+  resetTextScroll("resultQuestion", "resultAnswer");
   setState("impact");
 }
 
 function keepCurrentCatch() {
-  if (!game.currentCatch) return;
+  if (!game.currentCatch || game.currentCatch.requiresGeneration || !isCastAnswerReady(game.currentCast)) return false;
+  if (game.inventory.length >= ARCHIVE_MAX_CATCHES) {
+    game.inventoryFullAt = millis();
+    return false;
+  }
   const now = new Date();
-  game.inventory.unshift({
+  game.inventory.push({
     id: game.currentCatch.id,
+    castId: game.currentCast?.id || null,
     cast: game.runNumber,
-    question: game.question,
-    tackleId: game.selectedTackleId,
-    waterId: WATER_LOCATIONS[game.waterIndex]?.id || null,
+    question: game.currentCast?.question || game.question,
+    tackleId: game.currentCast?.tackleId || game.selectedTackleId,
+    waterId: game.currentCast?.waterId || WATER_LOCATIONS[game.waterIndex]?.id || null,
+    weatherId: game.currentCast?.weatherId || WEATHER_CONDITIONS[game.weatherIndex]?.id || null,
+    answer: game.currentCatch.candidate,
+    summary: game.currentCatch.summary,
+    missing: [...(game.currentCatch.missing || [])],
+    response: game.currentCatch.response,
+    category: game.currentCatch.category,
+    variationAngle: game.currentCast?.variationAngle || null,
+    aiStatus: game.currentCatch.aiStatus || "openai",
+    aiRevision: game.currentCatch.aiRevision || null,
+    answerFingerprint: game.currentCatch.answerFingerprint || null,
+    revision: AI_PREP_REVISION,
     savedAt: now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
   });
-  if (game.inventory.length > 8) game.inventory.length = 8;
-  game.archiveSelected = 0;
+  game.archiveSelected = game.inventory.length - 1;
+  game.archivePage = floor(game.archiveSelected / ARCHIVE_PAGE_SIZE);
+  resetArchiveTextScroll();
+  return true;
 }
 
 function setCatchJudgement(nextJudgement) {
   if (!game.currentCatch) return;
   if (nextJudgement === "keep" && !game.currentKept) {
-    keepCurrentCatch();
+    const wasKept = keepCurrentCatch();
+    if (!wasKept) return;
     game.currentKept = true;
-    game.saveStampAt = millis();
   }
   if (nextJudgement === "release" && game.currentKept) {
     const savedIndex = game.inventory.findIndex((entry) => entry.cast === game.runNumber);
     if (savedIndex >= 0) game.inventory.splice(savedIndex, 1);
     game.currentKept = false;
-    game.saveStampAt = 0;
+    game.archivePage = constrain(game.archivePage, 0, getArchiveTotalPages() - 1);
+    game.archiveSelected = game.inventory.length > 0
+      ? min(game.archiveSelected, game.inventory.length - 1)
+      : -1;
+    resetArchiveTextScroll();
   }
   game.judgement = nextJudgement;
 }
 
 function openArchive() {
   game.archiveReturnState = game.state === "failed" ? "failed" : "ready";
-  game.archiveSelected = game.inventory.length > 0 ? 0 : -1;
+  game.archivePage = constrain(game.archivePage, 0, getArchiveTotalPages() - 1);
+  if (game.inventory.length > 0 && (game.archiveSelected < 0 || game.archiveSelected >= game.inventory.length)) {
+    game.archiveSelected = game.archivePage * ARCHIVE_PAGE_SIZE;
+  }
+  if (game.inventory.length === 0) game.archiveSelected = -1;
+  resetArchiveTextScroll();
   setState("archive");
 }
 
@@ -4808,6 +6295,7 @@ function closeArchive() {
 }
 
 function finishRun(result) {
+  if (game.currentCast) game.currentCast.status = "lost";
   game.result = result;
   game.shake = result === "fish" ? 6 : 3;
   game.flash = result === "fish" ? 0.7 : 0.22;
@@ -4815,8 +6303,11 @@ function finishRun(result) {
 }
 
 function prepareCast(incrementRun = true) {
-  game.state = "ready";
-  game.stateStarted = millis();
+  stopRodChargeSound();
+  stopCastingSounds();
+  stopFishHookSound();
+  stopFishingReelSound();
+  stopLandingSoundSequence();
   game.charge = 0;
   game.castPower = 0;
   game.retrieve = 0;
@@ -4827,6 +6318,7 @@ function prepareCast(incrementRun = true) {
   game.dangerTime = 0;
   game.result = null;
   game.currentCatch = null;
+  game.currentCast = null;
   game.judgement = null;
   game.currentKept = false;
   game.ripples = [];
@@ -4836,27 +6328,85 @@ function prepareCast(incrementRun = true) {
   game.observation.x = 1040;
   game.observation.y = 650;
   if (incrementRun) game.runNumber += 1;
-  updateAccessibleStatus();
+  setState("ready");
 }
 
 function resetCast() {
   prepareCast(true);
 }
 
-function setState(nextState) {
-  if (nextState === "weather") {
+function setState(nextState, options = {}) {
+  const integrity = getStateIntegrityPlan(nextState);
+  nextState = integrity.state;
+  applyStateIntegrityPlan(integrity, { includeState: false });
+  const transition = window.AnglerGameFlow.getTransitionPlan(game.state, nextState, {
+    ideaHmmSoundPrestarted: game.ideaHmmSoundPrestarted,
+    tubeTvOpeningSoundPrestarted: game.tubeTvOpeningSoundPrestarted
+  });
+  if (transition.stopRodCharge) stopRodChargeSound();
+  if (transition.stopFishHook) stopFishHookSound();
+  if (transition.stopFishingReel) stopFishingReelSound();
+  if (transition.stopLanding) stopLandingSoundSequence();
+  if (transition.stopFishingMusic) stopFishingSceneMusic();
+  if (transition.stopTvStatic) stopTvStaticNoise();
+  if (transition.stopBeerOpening) stopBeerOpeningSound();
+  if (transition.stopDrinking) stopDrinkingSound();
+  if (transition.stopIdeaHmm) stopIdeaHmmSound();
+  if (transition.stopRemoteButton) stopRemoteButtonSound();
+  if (transition.stopTubeTvOpening) stopTubeTvOpeningSound();
+  if (transition.stopToolboxOpening) stopToolboxOpeningSound();
+  if (transition.stopToolboxRummaging) stopToolboxRummagingSound();
+  if (nextState === "weather" && !options.preserveSelection) {
     game.weatherIndex = floor(random(WEATHER_CONDITIONS.length));
     ensureWeatherFrames(WEATHER_CONDITIONS[game.weatherIndex].id);
     ensureWeatherSceneFrames(WEATHER_CONDITIONS[game.weatherIndex].id);
   }
-  if (nextState === "waterSelect") {
+  if (nextState === "waterSelect" && !options.preserveSelection) {
     game.waterIndex = -1;
     game.waterSelectAt = 0;
     game.waterSelectOrigin = null;
   }
   game.state = nextState;
   game.stateStarted = millis();
+  if (transition.startFishHook) startFishHookSound();
+  if (transition.startFishingReel) startFishingReelSound();
+  if (transition.startLanding) playLandingSoundSequence();
+  if (nextState === "charging") playRodChargeSound();
+  if (transition.startFishingMusic) startFishingSceneMusic();
+  if (transition.startTvStatic) startTvStaticNoise();
+  if (transition.startToolboxOpening) playToolboxOpeningSound();
+  if (transition.startToolboxRummaging) startToolboxRummagingSound();
+  if (transition.resetRemoteButtonIndex) game.remoteButtonSoundPressIndex = 0;
+  if (transition.playTubeTvOpening) playTubeTvOpeningSound();
+  if (transition.playIdeaHmm) playIdeaHmmSound();
+  if (!["question", "livingQuestion"].includes(nextState)) game.questionFocused = false;
+  syncQuestionInputState();
   updateAccessibleStatus();
+}
+
+function getStateIntegrityPlan(state) {
+  return window.AnglerGameFlow.getStateIntegrityPlan({
+    state,
+    currentCatchId: game.currentCatch?.id || null,
+    validCatchIds: CATCHES.map((item) => item.id),
+    weatherIndex: game.weatherIndex,
+    weatherCount: WEATHER_CONDITIONS.length,
+    waterIndex: game.waterIndex,
+    waterCount: WATER_LOCATIONS.length,
+    selectedTackleId: game.selectedTackleId,
+    validTackleIds: TACKLE_PROFILES.map((item) => item.id)
+  });
+}
+
+function applyStateIntegrityPlan(plan, options = {}) {
+  if (options.includeState !== false) game.state = plan.state;
+  game.weatherIndex = plan.weatherIndex;
+  game.waterIndex = plan.waterIndex;
+  game.selectedTackleId = plan.selectedTackleId;
+  if (plan.clearCurrentCatch) {
+    game.currentCatch = null;
+    game.result = null;
+  }
 }
 
 function updateAccessibleStatus() {
@@ -4864,6 +6414,8 @@ function updateAccessibleStatus() {
   if (!status) return;
 
   const messages = {
+    cover: "The exhibition title screen is ready. Select Start Experience to begin a new session.",
+    howTo: `How to play page ${howToPageIndex + 1} of ${howToPages.length}. Use Previous or Next to continue, or Close to return to the cover.`,
     introDrink: "A quiet moment before the question forms.",
     introIdea: "An information target is beginning to form.",
     livingQuestion: "Enter the question that will become your target.",
@@ -4885,7 +6437,9 @@ function updateAccessibleStatus() {
     impact: "A catch has surfaced.",
     result: "Inspect the response and decide whether to keep it for review.",
     archive: "Review the catches saved during this session.",
-    failed: "The catch was lost. Click to cast again."
+    failed: game.result === "signal"
+      ? "No verified AI response was received. Nothing was caught or saved; click to cast again."
+      : "The catch was lost. Click to cast again."
   };
 
   status.textContent = messages[game.state];

@@ -4,6 +4,9 @@
   "private": true,
   "description": "A screen-based interactive artwork using lure fishing as a metaphor for AI prompting and judgement.",
   "scripts": {
-    "start": "node app.js"
+    "start": "node --env-file-if-exists=.env tools/start-safe.js",
+    "preflight": "node --env-file-if-exists=.env tools/startup-preflight.js",
+    "check": "node --check app.js && node --check sketch.js && node --check tools/start-safe.js && node --check tools/startup-preflight.js && node --check public/js/ai-client.js && node --check public/js/audio-manager.js && node --check public/js/catch-answer-shaper.js && node --check public/js/game-rules.js && node --check public/js/game-flow.js",
+    "test": "node --test tests/*.test.js"
   }
 }
