@@ -2576,8 +2576,8 @@ function updateGame(dt) {
     }
 
     const activeTime = elapsed / 1000 + game.retrieve * 1.8;
-    if (window.AnglerGameFlow.shouldBeginBite(activeTime, game.biteAt)) beginBite();
-    else if (game.currentCast?.aiStatus === "ai-error") finishRun("signal");
+    if (game.currentCast?.aiStatus === "ai-error") finishRun("signal");
+    else if (window.AnglerGameFlow.shouldBeginBite(activeTime, game.biteAt)) beginBite();
     else if (game.retrieve >= 0.985) finishRun("empty");
   }
 
@@ -6099,21 +6099,19 @@ function buildAiRequestPayload(castRecord) {
 function requestAiCatch(castRecord) {
   const adapter = window.AnglerAI;
   if (!adapter || typeof adapter.generate !== "function") {
-    castRecord.answer = window.AnglerEmergencyAnswer.emergencyAnswer(
-      castRecord.question,
-      castRecord.catchId
-    );
-    castRecord.summary = "The live service was unavailable; a local exhibition fallback kept this cast playable.";
-    castRecord.missing = ["LIVE AI ANSWER"];
-    castRecord.aiStatus = "fallback";
+    castRecord.aiStatus = "ai-error";
     castRecord.aiError = "The AI service is not available.";
-    castRecord.answerLocked = true;
     return;
   }
   castRecord.aiStatus = "ai-pending";
   adapter.generate(castRecord.requestPayload).then((result) => {
     if (castRecord.sessionId !== game.exhibitionSessionId || !game.exhibitionSessionActive) return;
     if (castRecord.answerLocked) return;
+    if (result.source !== "openai") {
+      castRecord.aiStatus = "ai-error";
+      castRecord.aiError = result.failureCode || "no-live-answer";
+      return;
+    }
     castRecord.answer = window.AnglerCatchAnswers.shapeResponseAnswer(result, castRecord.catchId);
     castRecord.summary = result.summary;
     castRecord.missing = Array.isArray(result.missing) ? [...result.missing] : [];
@@ -6124,16 +6122,8 @@ function requestAiCatch(castRecord) {
   }).catch((error) => {
     if (castRecord.sessionId !== game.exhibitionSessionId || !game.exhibitionSessionActive) return;
     if (castRecord.answerLocked) return;
-    castRecord.answer = window.AnglerEmergencyAnswer.emergencyAnswer(
-      castRecord.question,
-      castRecord.catchId
-    );
-    castRecord.summary = "The server could not be reached; a local exhibition fallback kept this cast playable.";
-    castRecord.missing = ["LIVE AI ANSWER"];
-    castRecord.aiStatus = "fallback";
+    castRecord.aiStatus = "ai-error";
     castRecord.aiError = error instanceof Error ? error.message : String(error);
-    castRecord.answerLocked = true;
-    applyGeneratedAnswer(castRecord);
   });
 }
 
@@ -6224,15 +6214,10 @@ function buildRuntimeCatch(castRecord) {
 function landRandomCatch() {
   if (!game.currentCast) game.currentCast = createCastRecord();
   if (!isCastAnswerReady(game.currentCast)) {
-    game.currentCast.answer = window.AnglerEmergencyAnswer.emergencyAnswer(
-      game.currentCast.question,
-      game.currentCast.catchId
-    );
-    game.currentCast.summary = "The live answer missed the landing deadline; a local exhibition fallback kept the result immediate.";
-    game.currentCast.missing = ["LIVE AI ANSWER"];
-    game.currentCast.aiStatus = "fallback";
+    game.currentCast.aiStatus = "ai-error";
     game.currentCast.aiError = game.currentCast.aiError || "landing-deadline";
-    game.currentCast.answerLocked = true;
+    finishRun("signal");
+    return;
   }
   game.currentCast.status = "landed";
   game.currentCatch = buildRuntimeCatch(game.currentCast);

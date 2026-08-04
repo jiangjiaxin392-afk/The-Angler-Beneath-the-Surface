@@ -70,7 +70,7 @@ test("a timed-out request is aborted and classified as timeout", async () => {
   );
 });
 
-test("generation has its own short exhibition deadline", async () => {
+test("generation can use its own request deadline", async () => {
   const runtime = createRuntime((_path, options) => new Promise((_resolve, reject) => {
     options.signal.addEventListener("abort", () => reject(Object.assign(new Error("aborted"), { name: "AbortError" })));
   }));

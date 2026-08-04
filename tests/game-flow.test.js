@@ -75,11 +75,11 @@ test("charging to flying stops charge sound but keeps scene music", () => {
   assert.equal(plan.startFishingMusic, true);
 });
 
-test("both OpenAI and offline fallback answers can trigger a bite", () => {
+test("only a live OpenAI answer can produce a catch", () => {
   assert.equal(flow.isPlayableGeneratedAnswer("openai", "Live answer"), true);
-  assert.equal(flow.isPlayableGeneratedAnswer("fallback", "Signal lost"), true);
+  assert.equal(flow.isPlayableGeneratedAnswer("fallback", "Local answer"), false);
   assert.equal(flow.isPlayableGeneratedAnswer("ai-error", "Signal lost"), false);
-  assert.equal(flow.isPlayableGeneratedAnswer("fallback", "   "), false);
+  assert.equal(flow.isPlayableGeneratedAnswer("openai", "   "), false);
 });
 
 test("bite timing is controlled by weather instead of AI completion", () => {

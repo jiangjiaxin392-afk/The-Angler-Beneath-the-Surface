@@ -7,9 +7,9 @@
 })(typeof window !== "undefined" ? window : null, function createServerAiModule() {
   "use strict";
 
-  const CLIENT_REVISION = "20260805-server-v4";
+  const CLIENT_REVISION = "20260805-server-v5";
   const DEFAULT_RECOMMENDATION_TIMEOUT_MS = 30_000;
-  const DEFAULT_GENERATION_TIMEOUT_MS = 6_000;
+  const DEFAULT_GENERATION_TIMEOUT_MS = 30_000;
 
   function createAiError(message, code, details = {}) {
     const error = new Error(message);

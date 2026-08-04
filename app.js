@@ -7,7 +7,7 @@ const aiResilience = require("./server/ai-resilience.js");
 
 const port = Number(process.env.PORT) || 3001;
 const listenHost = String(process.env.ANGLER_HOST || "127.0.0.1").trim();
-const serverRevision = "20260805-server-v10";
+const serverRevision = "20260805-server-v11";
 const projectRoot = __dirname;
 const publicRoot = path.join(projectRoot, "public");
 const publicEntryFiles = new Set(["index.html", "sketch.js", "style.css"]);
@@ -604,17 +604,13 @@ async function handleGeneration(request, response, body) {
     await waitBeforeRetry(attempt, lastError);
   }
   if (!result) {
-    const fallback = aiResilience.buildEmergencyGeneration({
-      question,
-      catchId,
-      requestId,
-      revision: catchAnswerShaper.CURRENT_REVISION,
-      detailLevel: lengthGuidance.level,
-      error: lastError,
-      attempts
+    const failureCode = aiResilience.failureCode(lastError);
+    console.error(`[AI failure] catch=${catchId} code=${failureCode} attempts=${attempts} durationMs=${Date.now() - generationStartedAt}`);
+    const statusCode = Number(lastError?.statusCode);
+    return sendJson(response, [429, 502, 503, 504].includes(statusCode) ? statusCode : 503, {
+      error: "The AI service did not return a usable live answer.",
+      failureCode
     });
-    console.error(`[AI fallback] catch=${catchId} code=${fallback.failureCode} attempts=${attempts} durationMs=${Date.now() - generationStartedAt}`);
-    return sendJson(response, 200, fallback);
   }
   console.log(`[AI generation] catch=${catchId} source=openai attempts=${attempts} durationMs=${Date.now() - generationStartedAt}`);
   const fingerprint = crypto.createHash("sha256").update(answer).digest("hex").slice(0, 20);

@@ -1,8 +1,5 @@
 "use strict";
 
-const crypto = require("node:crypto");
-const { emergencyAnswer } = require("../public/js/emergency-answer.js");
-
 const retryLimits = Object.freeze({
   "invalid-json": 3,
   "no-readable-output": 3,
@@ -25,30 +22,7 @@ function retryLimit(error) {
   return retryLimits[failureCode(error)] || 2;
 }
 
-function buildEmergencyGeneration({ question, catchId, requestId, revision, detailLevel, error, attempts }) {
-  const answer = emergencyAnswer(question, catchId);
-  return {
-    source: "fallback",
-    status: "fallback",
-    revision,
-    answerShapeApplied: true,
-    answerShapeRevision: revision,
-    requestId,
-    answer,
-    summary: "OpenAI did not return a usable response; a local exhibition fallback kept this cast playable.",
-    missing: ["LIVE AI ANSWER"],
-    answerFingerprint: crypto.createHash("sha256").update(answer).digest("hex").slice(0, 20),
-    answerDetailLevel: detailLevel,
-    model: null,
-    responseId: null,
-    failureCode: failureCode(error),
-    attempts
-  };
-}
-
 module.exports = Object.freeze({
-  buildEmergencyGeneration,
-  emergencyAnswer,
   failureCode,
   retryLimit
 });

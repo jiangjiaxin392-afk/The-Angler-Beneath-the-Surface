@@ -48,7 +48,7 @@
   ]);
 
   const CATCH_REQUIRED_STATES = Object.freeze(["impact", "awaitingAnswer", "result"]);
-  const PLAYABLE_ANSWER_STATUSES = Object.freeze(["openai", "fallback"]);
+  const PLAYABLE_ANSWER_STATUSES = Object.freeze(["openai"]);
 
   function isIn(groupName, state) {
     return STATE_GROUPS[groupName].includes(state);

@@ -67,7 +67,7 @@ test("status exposes the running server revision", async () => {
   assert.equal(response.status, 200);
   const status = await response.json();
   assert.equal(status.provider, "openai");
-  assert.equal(status.serverRevision, "20260805-server-v10");
+  assert.equal(status.serverRevision, "20260805-server-v11");
   assert.equal(typeof status.configured, "boolean");
 });
 
@@ -101,22 +101,22 @@ test("encoded traversal cannot expose project files", async () => {
   assert.equal(response.status, 404);
 });
 
-test("a provider outage returns a playable fallback instead of a dead cast", async () => {
+test("a provider outage returns no fabricated catch answer", async () => {
   const response = await fetch(`${baseUrl}/api/ai/generate`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      requestId: "smoke-fallback",
+      requestId: "smoke-no-response",
       question: "伦敦哪里好玩？",
       modelSelection: { waterId: "daylight-river" },
       promptConfiguration: { tackleId: "quick", weight: "LIGHT" },
       answerShape: { catchId: "perch" }
     })
   });
-  assert.equal(response.status, 200);
+  assert.equal(response.status, 503);
   const result = await response.json();
-  assert.equal(result.source, "fallback");
-  assert.equal(result.answer, "大本钟");
+  assert.equal(Object.hasOwn(result, "source"), false);
+  assert.equal(Object.hasOwn(result, "answer"), false);
   assert.equal(result.failureCode, "not-configured");
 });
 
