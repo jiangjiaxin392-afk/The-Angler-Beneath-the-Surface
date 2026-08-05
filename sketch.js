@@ -11,6 +11,7 @@ const HOW_TO_PAGE_PATHS = HOW_TO_PAGE_NAMES.map((name, index) => (
 const EXHIBITION_START_BUTTON = { x: 800, y: 776, w: 320, h: 135 };
 const EXHIBITION_HOW_TO_BUTTON = { x: 820, y: 928, w: 280, h: 118 };
 const HOW_TO_CLOSE_BUTTON = { x: 1704, y: 30, w: 180, h: 190 };
+const HOW_TO_CLOSE_HOVER_RING = { x: 1793, y: 107, diameter: 136 };
 const HOW_TO_PREV_BUTTON = { x: 610, y: 970, w: 250, h: 82 };
 const HOW_TO_NEXT_BUTTON = { x: 1060, y: 970, w: 250, h: 82 };
 const HOW_TO_CAPTION_BOUNDS = [
@@ -673,6 +674,7 @@ let previewImpactTime = null;
 let previewAnglerState = null;
 let questionInputElement = null;
 let activeScrollRegions = [];
+let activeScrollDrag = null;
 let exhibitionCover;
 const howToPages = new Array(HOW_TO_PAGE_PATHS.length).fill(null);
 const howToPageLoadStates = new Array(HOW_TO_PAGE_PATHS.length).fill("idle");
@@ -2020,16 +2022,35 @@ function drawScrollableTextBlock(value, bounds, scrollKey, options = {}) {
   drawingContext.restore();
 
   const hovered = pointInRect(mouseX, mouseY, drawBounds);
-  activeScrollRegions.push({ key: scrollKey, bounds: drawBounds, maxScroll, step: lineHeight * 2 });
-  if (maxScroll > 0 && hovered) {
-    const railX = drawBounds.x + drawBounds.w - 7;
-    const thumbHeight = max(24, drawBounds.h * (drawBounds.h / totalHeight));
-    const thumbY = drawBounds.y + (drawBounds.h - thumbHeight) * (offset / maxScroll);
+  const railX = drawBounds.x + drawBounds.w - 7;
+  const thumbHeight = max(24, drawBounds.h * (drawBounds.h / totalHeight));
+  const thumbY = maxScroll > 0
+    ? drawBounds.y + (drawBounds.h - thumbHeight) * (offset / maxScroll)
+    : drawBounds.y;
+  const scrollbar = maxScroll > 0
+    ? {
+        x: railX,
+        y: drawBounds.y,
+        w: 6,
+        h: drawBounds.h,
+        thumbY,
+        thumbHeight,
+        hitBounds: { x: railX - 7, y: drawBounds.y, w: 20, h: drawBounds.h }
+      }
+    : null;
+  activeScrollRegions.push({
+    key: scrollKey,
+    bounds: drawBounds,
+    maxScroll,
+    step: lineHeight * 2,
+    scrollbar
+  });
+  if (scrollbar && (hovered || options.alwaysShowScrollbar)) {
     noStroke();
     fill(8, 5, 12, 180);
-    rect(railX, drawBounds.y, 6, drawBounds.h, 3);
+    rect(scrollbar.x, scrollbar.y, scrollbar.w, scrollbar.h, 3);
     fill(options.scrollColour || "#5DD4C8");
-    rect(railX, thumbY, 6, thumbHeight, 3);
+    rect(scrollbar.x, scrollbar.thumbY, scrollbar.w, scrollbar.thumbHeight, 3);
   }
   pop();
   return { maxScroll, lines, totalHeight };
@@ -2041,6 +2062,49 @@ function resetTextScroll(...keys) {
 
 function resetArchiveTextScroll() {
   resetTextScroll("archiveQuestion", "archiveAnswer", "archiveRecord");
+}
+
+function updateActiveScrollDrag(pointerY) {
+  if (!activeScrollDrag) return;
+  const travel = activeScrollDrag.trackHeight - activeScrollDrag.thumbHeight;
+  if (travel <= 0) {
+    game.textScroll[activeScrollDrag.key] = 0;
+    return;
+  }
+  const thumbY = constrain(
+    pointerY - activeScrollDrag.pointerOffset,
+    activeScrollDrag.trackY,
+    activeScrollDrag.trackY + travel
+  );
+  game.textScroll[activeScrollDrag.key] =
+    ((thumbY - activeScrollDrag.trackY) / travel) * activeScrollDrag.maxScroll;
+}
+
+function beginTextScrollDrag(pointerX, pointerY) {
+  for (let index = activeScrollRegions.length - 1; index >= 0; index -= 1) {
+    const region = activeScrollRegions[index];
+    const scrollbar = region.scrollbar;
+    if (!scrollbar || !pointInRect(pointerX, pointerY, scrollbar.hitBounds)) continue;
+    const thumbBounds = {
+      x: scrollbar.hitBounds.x,
+      y: scrollbar.thumbY,
+      w: scrollbar.hitBounds.w,
+      h: scrollbar.thumbHeight
+    };
+    activeScrollDrag = {
+      key: region.key,
+      maxScroll: region.maxScroll,
+      trackY: scrollbar.y,
+      trackHeight: scrollbar.h,
+      thumbHeight: scrollbar.thumbHeight,
+      pointerOffset: pointInRect(pointerX, pointerY, thumbBounds)
+        ? pointerY - scrollbar.thumbY
+        : scrollbar.thumbHeight / 2
+    };
+    updateActiveScrollDrag(pointerY);
+    return true;
+  }
+  return false;
 }
 
 function applyPreviewState() {
@@ -2415,7 +2479,12 @@ function drawHowToPage() {
     noFill();
     stroke("#59D0CD");
     strokeWeight(5);
-    ellipse(1794, 123, 142, 142);
+    ellipse(
+      HOW_TO_CLOSE_HOVER_RING.x,
+      HOW_TO_CLOSE_HOVER_RING.y,
+      HOW_TO_CLOSE_HOVER_RING.diameter,
+      HOW_TO_CLOSE_HOVER_RING.diameter
+    );
     pop();
   }
 }
@@ -4929,7 +4998,13 @@ function drawAwaitingAnswerInfo() {
     game.question,
     { x: questionPanel.x + 34, y: questionPanel.y + 67, w: questionPanel.w - 68, h: questionPanel.h - 82 },
     "resultQuestion",
-    { fontSize: 23, lineHeight: 30, colour: "#F0E6C8", scrollColour: "#F02B91" }
+    {
+      fontSize: 23,
+      lineHeight: 30,
+      colour: "#F0E6C8",
+      scrollColour: "#F02B91",
+      alwaysShowScrollbar: true
+    }
   );
   fill("#5DD4C8");
   textStyle(BOLD);
@@ -5028,7 +5103,13 @@ function drawCatchResultInfo(catchData, profile, question) {
       h: questionPanel.h - 82
     },
     "resultQuestion",
-    { fontSize: 23, lineHeight: 30, colour: "#F0E6C8", scrollColour: "#F02B91" }
+    {
+      fontSize: 23,
+      lineHeight: 30,
+      colour: "#F0E6C8",
+      scrollColour: "#F02B91",
+      alwaysShowScrollbar: true
+    }
   );
 
   fill("#5DD4C8");
@@ -5354,7 +5435,13 @@ function drawArchiveInfoV2(catchData, profile, selectedEntry) {
       h: questionPanel.h - 88
     },
     "archiveQuestion",
-    { fontSize: 27, lineHeight: 34, colour: "#F0E6C8", scrollColour: "#F02B91" }
+    {
+      fontSize: 27,
+      lineHeight: 34,
+      colour: "#F0E6C8",
+      scrollColour: "#F02B91",
+      alwaysShowScrollbar: true
+    }
   );
 
   fill("#5DD4C8");
@@ -5566,6 +5653,7 @@ function handleExhibitionCoverClick(event) {
 }
 
 function mousePressed(event) {
+  if (beginTextScrollDrag(mouseX, mouseY)) return false;
   if (game.state === "cover") {
     const pointer = getCanvasEventPoint(event);
     if (pointInRect(pointer.x, pointer.y, EXHIBITION_START_BUTTON)) {
@@ -5732,7 +5820,17 @@ function mousePressed(event) {
   return false;
 }
 
+function mouseDragged() {
+  if (!activeScrollDrag) return true;
+  updateActiveScrollDrag(mouseY);
+  return false;
+}
+
 function mouseReleased() {
+  if (activeScrollDrag) {
+    activeScrollDrag = null;
+    return false;
+  }
   if (game.state === "charging") castLine();
   return false;
 }
