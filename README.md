@@ -42,6 +42,10 @@ Then open `http://localhost:3001`.
 
 If PowerShell permits npm scripts, `npm install` and `npm start` work as well. Keep the local server running while testing changes and use `Ctrl + C` only when intentionally stopping it.
 
+## Presentation Reserve
+
+The EXAMPLE button enters the exact question `What attractions should I visit in London?`. That one unchanged question has a curated server-side response for every catch type so a presentation can continue without network or API availability. The response is recorded internally as `presentation-reserve`. Any edited or different question continues to require a live OpenAI answer.
+
 ## Deployment
 
 The local server exposes the root entry files and `public/`. The deployment set is:

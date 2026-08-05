@@ -163,7 +163,7 @@ function printReport(report) {
   const configured = runningStatus ? Boolean(runningStatus.configured) : report.openAiConfigured;
   console.log(`Startup check: OpenAI configured: ${configured}`);
   if (!configured) {
-    console.warn("Startup warning: OPENAI_API_KEY is missing; AI catches will remain unavailable until it is configured.");
+    console.warn("Startup warning: OPENAI_API_KEY is missing; live AI catches are unavailable, but the exact presentation EXAMPLE reserve remains active.");
   }
 
   if (report.portInspection.state === "angler") {

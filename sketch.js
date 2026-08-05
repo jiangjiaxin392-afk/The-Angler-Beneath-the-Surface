@@ -6210,7 +6210,7 @@ function requestAiCatch(castRecord) {
   adapter.generate(castRecord.requestPayload).then((result) => {
     if (castRecord.sessionId !== game.exhibitionSessionId || !game.exhibitionSessionActive) return;
     if (castRecord.answerLocked) return;
-    if (result.source !== "openai") {
+    if (!window.AnglerGameFlow.isPlayableGeneratedAnswer(result.source, result.answer)) {
       castRecord.aiStatus = "ai-error";
       castRecord.aiError = result.failureCode || "no-live-answer";
       return;

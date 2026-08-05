@@ -67,7 +67,7 @@ test("status exposes the running server revision", async () => {
   assert.equal(response.status, 200);
   const status = await response.json();
   assert.equal(status.provider, "openai");
-  assert.equal(status.serverRevision, "20260805-server-v13");
+  assert.equal(status.serverRevision, "20260805-server-v14");
   assert.equal(status.reasoningEffort, "low");
   assert.equal(typeof status.configured, "boolean");
 });
@@ -119,6 +119,25 @@ test("a provider outage returns no fabricated catch answer", async () => {
   assert.equal(Object.hasOwn(result, "source"), false);
   assert.equal(Object.hasOwn(result, "answer"), false);
   assert.equal(result.failureCode, "not-configured");
+});
+
+test("the exact presentation example returns its curated answer without OpenAI", async () => {
+  const response = await fetch(`${baseUrl}/api/ai/generate`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      requestId: "smoke-presentation-reserve",
+      question: "What attractions should I visit in London?",
+      modelSelection: { waterId: "daylight-river" },
+      promptConfiguration: { tackleId: "quick", weight: "LIGHT" },
+      answerShape: { catchId: "perch" }
+    })
+  });
+  assert.equal(response.status, 200);
+  const result = await response.json();
+  assert.equal(result.source, "presentation-reserve");
+  assert.equal(result.answer, "Big Ben.");
+  assert.equal(result.attempts, 0);
 });
 
 test("AI routes enforce the per-client request window", async () => {

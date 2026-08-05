@@ -75,8 +75,9 @@ test("charging to flying stops charge sound but keeps scene music", () => {
   assert.equal(plan.startFishingMusic, true);
 });
 
-test("only a live OpenAI answer can produce a catch", () => {
+test("only OpenAI or the exact presentation reserve can produce a catch", () => {
   assert.equal(flow.isPlayableGeneratedAnswer("openai", "Live answer"), true);
+  assert.equal(flow.isPlayableGeneratedAnswer("presentation-reserve", "Curated answer"), true);
   assert.equal(flow.isPlayableGeneratedAnswer("fallback", "Local answer"), false);
   assert.equal(flow.isPlayableGeneratedAnswer("ai-error", "Signal lost"), false);
   assert.equal(flow.isPlayableGeneratedAnswer("openai", "   "), false);
@@ -84,6 +85,7 @@ test("only a live OpenAI answer can produce a catch", () => {
 
 test("a bite waits for both weather timing and a live answer", () => {
   assert.equal(flow.shouldBeginBite(4.1, 4, "openai", "Ready"), true);
+  assert.equal(flow.shouldBeginBite(4.1, 4, "presentation-reserve", "Ready"), true);
   assert.equal(flow.shouldBeginBite(3.9, 4, "openai", "Ready"), false);
   assert.equal(flow.shouldBeginBite(4.1, 4, "ai-pending", null), false);
   assert.equal(flow.shouldBeginBite(4.1, 4, "fallback", "Local answer"), false);

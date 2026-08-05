@@ -4,10 +4,11 @@ const path = require("path");
 const crypto = require("crypto");
 const catchAnswerShaper = require("./public/js/catch-answer-shaper.js");
 const aiResilience = require("./server/ai-resilience.js");
+const presentationReserve = require("./server/presentation-reserve.js");
 
 const port = Number(process.env.PORT) || 3001;
 const listenHost = String(process.env.ANGLER_HOST || "127.0.0.1").trim();
-const serverRevision = "20260805-server-v13";
+const serverRevision = "20260805-server-v14";
 const projectRoot = __dirname;
 const publicRoot = path.join(projectRoot, "public");
 const publicEntryFiles = new Set(["index.html", "sketch.js", "style.css"]);
@@ -549,6 +550,28 @@ async function handleGeneration(request, response, body) {
     return sendJson(response, 400, { error: "The selected location, tackle or catch type is invalid." });
   }
   const generationStartedAt = Date.now();
+
+  const reserveAnswer = presentationReserve.getAnswer(question, catchId);
+  if (reserveAnswer) {
+    const answerFingerprint = crypto.createHash("sha256").update(reserveAnswer.answer).digest("hex").slice(0, 20);
+    console.log(`[AI generation] catch=${catchId} source=${presentationReserve.SOURCE} attempts=0 durationMs=${Date.now() - generationStartedAt}`);
+    return sendJson(response, 200, {
+      source: presentationReserve.SOURCE,
+      status: "ready",
+      revision: presentationReserve.REVISION,
+      answerShapeApplied: true,
+      answerShapeRevision: presentationReserve.REVISION,
+      requestId,
+      answer: reserveAnswer.answer,
+      summary: reserveAnswer.summary,
+      missing: reserveAnswer.missing,
+      answerFingerprint,
+      answerDetailLevel: catchId === "perch" ? "minimal" : catchId === "carp" ? "overloaded" : "curated",
+      model: presentationReserve.SOURCE,
+      responseId: null,
+      attempts: 0
+    });
+  }
 
   const safeInput = {
     question,
