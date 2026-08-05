@@ -17,6 +17,7 @@ Thumbs.db
 # temporary files
 *.tmp
 *.log
+~$*.docx
 
 # browser and QA artifacts
 .playwright-cli/
@@ -31,3 +32,6 @@ __pycache__/
 # local inspection images
 remote-current-contact.jpg
 remote-problem-locator.jpg
+
+# private source documents containing personal information
+docs/private-reference/
