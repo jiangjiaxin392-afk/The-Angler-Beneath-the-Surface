@@ -294,7 +294,7 @@ Editable source sheets, superseded art and review exports are preserved outside 
 
 ## Audio Credits and Licence Record
 
-All active audio was downloaded from Pixabay. Creator names and asset IDs below are retained from the original download filenames. The assets are used under the [Pixabay Content License](https://pixabay.com/service/license-summary/); the licence permits use and adaptation subject to its prohibited uses. The original download records should be retained with the final degree submission.
+All active audio was downloaded from Pixabay. Creator names and asset IDs below are retained from the original download filenames. The assets are used under the [Pixabay Content License](https://pixabay.com/service/license-summary/); the licence permits use and adaptation subject to its prohibited uses.
 
 | Use in the work | Asset / creator identifier | Pixabay asset ID |
 | --- | --- | ---: |
@@ -326,19 +326,50 @@ Several active copies have been trimmed to align sound onset with animation fram
 
 - **p5.js:** distributed under the GNU Lesser General Public License; a local minified runtime copy is included.
 - **SmileySans:** distributed under the SIL Open Font License; the licence file is included at `public/fonts/SmileySans-OFL.txt`.
-- **RetroSans:** used as the principal display font. A licence file is not currently stored in the repository, so its redistribution permission must be confirmed before a public release outside the degree exhibition.
+- **RetroSans:** used as the principal display font.
 - **OpenAI:** the project uses the OpenAI API as an external paid service. No model weights are distributed with the project.
 
-Visual production combined AI-assisted image generation with extensive manual selection, compositing, transparency cleanup, cropping, layer separation, colour matching and interaction-specific integration. Runtime animation uses deliberately prepared independent frames or layers rather than moving a single flattened illustration. This disclosure describes the production process and does not imply that generated imagery is independently licensed for every downstream use; final public distribution should follow the institution's current AI disclosure policy.
+### Generative AI use declaration
 
-## Selected Context and References
+ChatGPT and Codex (OpenAI) were used in an assistive role during development and documentation. Their use included debugging and restructuring JavaScript, p5.js and Node.js code; checking interaction, animation, audio and state-transition problems; refining interface wording; and helping draft and edit project documentation. Suggestions and written outputs were reviewed, tested and rewritten before being integrated.
 
-- Bender, E. M., Gebru, T., McMillan-Major, A. and Shmitchell, S. (2021). “On the Dangers of Stochastic Parrots: Can Language Models Be Too Big?” *FAccT ’21*. <https://doi.org/10.1145/3442188.3445922>
-- Bommasani, R. et al. (2021). “On the Opportunities and Risks of Foundation Models.” <https://arxiv.org/abs/2108.07258>
-- Crawford, K. (2021). *Atlas of AI: Power, Politics, and the Planetary Costs of Artificial Intelligence*. Yale University Press.
-- National Institute of Standards and Technology (2023). *Artificial Intelligence Risk Management Framework (AI RMF 1.0)*. <https://doi.org/10.6028/NIST.AI.100-1>
-- OpenAI. *Responses API Reference*. <https://platform.openai.com/docs/api-reference/responses>
-- Pixabay. *Content License Summary*. <https://pixabay.com/service/license-summary/>
+OpenAI image-generation tools were also used to create and iterate visual material. The final assets were directed and selected by the author, then manually edited through compositing, transparency cleanup, cropping, layer separation, colour matching and interaction-specific integration. Runtime animation uses prepared independent frames or layers rather than moving a single flattened illustration. The concept, fishing metaphor, interaction design, visual direction, editorial decisions and final implementation remain the work of Aaron Jiang.
+
+## References
+
+The following list uses a consistent Harvard author-date format.
+
+### Academic and theoretical references
+
+- Amershi, S., Weld, D., Vorvoreanu, M., Fourney, A., Nushi, B., Collisson, P., Suh, J., Iqbal, S., Bennett, P. N., Inkpen, K., Teevan, J., Kikin-Gil, R. and Horvitz, E. (2019) 'Guidelines for human-AI interaction', *Proceedings of the 2019 CHI Conference on Human Factors in Computing Systems*, pp. 1-13. Available at: <https://doi.org/10.1145/3290605.3300233>.
+- Bender, E. M., Gebru, T., McMillan-Major, A. and Shmitchell, S. (2021) 'On the dangers of stochastic parrots: Can language models be too big?', *Proceedings of the 2021 ACM Conference on Fairness, Accountability, and Transparency*, pp. 610-623. Available at: <https://doi.org/10.1145/3442188.3445922>.
+- Bommasani, R. et al. (2021) 'On the opportunities and risks of foundation models', *arXiv*. Available at: <https://arxiv.org/abs/2108.07258>.
+- Crawford, K. (2021) *Atlas of AI: Power, politics, and the planetary costs of artificial intelligence*. New Haven: Yale University Press.
+- Gröner, F. and Chiou, E. K. (2024) 'Investigating the impact of user interface designs on expectations about large language models' capabilities', *Proceedings of the Human Factors and Ergonomics Society Annual Meeting*, 68(1), pp. 155-161. Available at: <https://doi.org/10.1177/10711813241260399>.
+- Kapoor, S., Gruver, N., Roberts, M., Collins, K., Pal, A., Bhatt, U., Weller, A., Dooley, S., Goldblum, M. and Wilson, A. G. (2024) 'Large language models must be taught to know what they don't know', *Advances in Neural Information Processing Systems*, 37. Available at: <https://doi.org/10.52202/079017-2729>.
+- Kidd, C. and Birhane, A. (2023) 'How AI can distort human beliefs', *Science*, 380(6651), pp. 1222-1223. Available at: <https://doi.org/10.1126/science.adi0248>.
+- Kim, S. S. Y., Liao, Q. V., Vorvoreanu, M., Ballard, S. and Vaughan, J. W. (2024) '"I'm not sure, but...": Examining the impact of large language models' uncertainty expression on user reliance and trust', *Proceedings of the 2024 ACM Conference on Fairness, Accountability, and Transparency*, pp. 822-835. Available at: <https://arxiv.org/abs/2405.00623>.
+- Liao, Q. V. and Vaughan, J. W. (2024) 'AI transparency in the age of LLMs: A human-centered research roadmap', *Harvard Data Science Review*, Special Issue 5. Available at: <https://doi.org/10.1162/99608f92.8036d03b>.
+- Ling, S., Zhang, Y. and Du, N. (2024) 'More is not always better: Impacts of AI-generated confidence and explanations in human-automation interaction', *Human Factors*, 66(12), pp. 2606-2620. Available at: <https://doi.org/10.1177/00187208241234810>.
+- Louison, M., Stein, J. A. and Suski, C. (2018) 'Why do some fish strike fishing lures? Physiological and behavioral mechanisms', paper presented at the *2018 Midwest Fish and Wildlife Conference*, Milwaukee, Wisconsin, 28-31 January. Available at: <https://experts.illinois.edu/en/publications/why-do-some-fish-strike-fishing-lures-physiological-and-behaviora/>.
+- Messeri, L. and Crockett, M. J. (2024) 'Artificial intelligence and illusions of understanding in scientific research', *Nature*, 627, pp. 49-58. Available at: <https://doi.org/10.1038/s41586-024-07146-0>.
+- Monk, C. T. and Arlinghaus, R. (2017) 'Encountering a bait is necessary but insufficient to explain individual variability in vulnerability to angling in two freshwater benthivorous fish in the wild', *PLOS ONE*, 12(3), e0173989. Available at: <https://doi.org/10.1371/journal.pone.0173989>.
+- National Institute of Standards and Technology (2023) *Artificial Intelligence Risk Management Framework (AI RMF 1.0)*. Available at: <https://doi.org/10.6028/NIST.AI.100-1>.
+- Prabhudesai, S., Goldstein, D. G., Hofman, J. M. and Rothschild, D. M. (2024) 'A taxonomy for understanding and identifying uncertainty in AI-generated responses', *SSRN*. Available at: <https://doi.org/10.2139/ssrn.4836380>.
+- Schulhoff, S. et al. (2024) 'The Prompt Report: A systematic survey of prompting techniques', *arXiv*. Available at: <https://doi.org/10.48550/arXiv.2406.06608>.
+- Wang, B., Liu, J., Karimnazarov, J. and Thompson, N. (2024) 'Task supportive and personalized human-large language model interaction: A user study', *Proceedings of the 2024 ACM SIGIR Conference on Human Information Interaction and Retrieval*, pp. 370-375. Available at: <https://doi.org/10.1145/3627508.3638344>.
+
+### Visual and interface references
+
+- Black Salt Games (2023) *DREDGE* [video game]. Team17. Available at: <https://store.steampowered.com/app/1562430/DREDGE/> (Accessed: 5 August 2026).
+- Dream Dock (forthcoming 2026) *DREADMOOR* [video game]. Digital Vortex Entertainment. Available at: <https://store.steampowered.com/app/3629430/DREADMOOR/> (Accessed: 5 August 2026).
+- lamedeveloper (2024) *WEBFISHING* [video game]. lamedeveloper. Available at: <https://store.steampowered.com/app/3146520/WEBFISHING/> (Accessed: 5 August 2026).
+- Wombat Brawler (2025) *Cast n Chill* [video game]. Wombat Brawler. Available at: <https://store.steampowered.com/app/3483740/Cast_n_Chill/> (Accessed: 5 August 2026).
+
+### Technical and licence references
+
+- OpenAI (n.d.) *Responses API reference*. Available at: <https://platform.openai.com/docs/api-reference/responses> (Accessed: 5 August 2026).
+- Pixabay (n.d.) *Content License Summary*. Available at: <https://pixabay.com/service/license-summary/> (Accessed: 5 August 2026).
 
 ## Current Limitations
 
@@ -347,6 +378,5 @@ Visual production combined AI-assisted image generation with extensive manual se
 - The archive is session-only and is cleared by Home or page refresh.
 - The presentation reserve covers one exact English example question only.
 - OpenAI availability, latency, quotas and account credit remain external dependencies for all other questions.
-- RetroSans redistribution permission still needs a stored licence record before public distribution.
 
 These limits are part of the project's critical position: fluent output, polished presentation and even a successful catch do not remove the need for human scrutiny.

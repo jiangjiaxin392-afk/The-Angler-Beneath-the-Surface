@@ -80,6 +80,7 @@ test("root serves the game entry page", async () => {
   assert.equal(response.headers.get("x-frame-options"), "DENY");
   assert.equal(response.headers.get("referrer-policy"), "no-referrer");
   assert.match(response.headers.get("content-security-policy") || "", /default-src 'self'/);
+  assert.match(response.headers.get("content-security-policy") || "", /style-src 'self' 'unsafe-inline'/);
   assert.match(response.headers.get("permissions-policy") || "", /microphone=\(\)/);
   assert.match(await response.text(), /The Angler/);
 });
