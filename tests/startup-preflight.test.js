@@ -7,6 +7,7 @@ const { afterEach, test } = require("node:test");
 
 const {
   collectLocalIndexReferences,
+  inspectAudioManifest,
   inspectAssets,
   inspectPort,
   reportHasFatalError
@@ -38,6 +39,12 @@ test("the current project passes its critical asset check", () => {
   const result = inspectAssets(path.resolve(__dirname, ".."));
   assert.ok(result.checked > 20);
   assert.deepEqual(result.missing, []);
+});
+
+test("the current audio manifest has unique intact tracks", () => {
+  const result = inspectAudioManifest(path.resolve(__dirname, ".."));
+  assert.equal(result.checked, 21);
+  assert.deepEqual(result.problems, []);
 });
 
 test("local environment variants stay ignored while the example remains safe", () => {

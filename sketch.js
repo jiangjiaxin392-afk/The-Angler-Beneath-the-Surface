@@ -2474,7 +2474,8 @@ function drawHowToPage() {
   text(howToPageIndex === howToPages.length - 1 ? "BACK TO COVER" : "NEXT", HOW_TO_NEXT_BUTTON.x + HOW_TO_NEXT_BUTTON.w * 0.5, HOW_TO_NEXT_BUTTON.y + HOW_TO_NEXT_BUTTON.h * 0.5);
   pop();
 
-  if (howToCloseButtonHovered) {
+  const closeHovered = howToCloseButtonHovered || pointInRect(mouseX, mouseY, HOW_TO_CLOSE_BUTTON);
+  if (closeHovered) {
     push();
     noFill();
     stroke("#59D0CD");
