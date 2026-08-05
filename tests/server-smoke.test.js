@@ -67,7 +67,7 @@ test("status exposes the running server revision", async () => {
   assert.equal(response.status, 200);
   const status = await response.json();
   assert.equal(status.provider, "openai");
-  assert.equal(status.serverRevision, "20260805-server-v14");
+  assert.equal(status.serverRevision, "20260805-server-v15");
   assert.equal(status.reasoningEffort, "low");
   assert.equal(typeof status.configured, "boolean");
 });
@@ -136,7 +136,7 @@ test("the exact presentation example returns its curated answer without OpenAI",
   assert.equal(response.status, 200);
   const result = await response.json();
   assert.equal(result.source, "presentation-reserve");
-  assert.equal(result.answer, "Big Ben.");
+  assert.ok(["Big Ben.", "Tower Bridge.", "British Museum.", "Greenwich."].includes(result.answer));
   assert.equal(result.attempts, 0);
 });
 

@@ -44,7 +44,7 @@ If PowerShell permits npm scripts, `npm install` and `npm start` work as well. K
 
 ## Presentation Reserve
 
-The EXAMPLE button enters the exact question `What attractions should I visit in London?`. That one unchanged question has a curated server-side response for every catch type so a presentation can continue without network or API availability. The response is recorded internally as `presentation-reserve`. Any edited or different question continues to require a live OpenAI answer.
+The EXAMPLE button enters the exact question `What attractions should I visit in London?`. That one unchanged question has four curated server-side responses for every catch type (32 in total), so repeated presentation casts rotate through distinct answers without network or API availability. A repeated request ID remains idempotent, and a new four-answer cycle cannot immediately repeat the previous answer. These responses are recorded internally as `presentation-reserve`. Any edited or different question continues to require a live OpenAI answer.
 
 ## Deployment
 
