@@ -12,6 +12,21 @@ test("TV cutscene skips reach weather without interrupting static", () => {
   assert.equal(plan.stopTubeTvOpening, true);
 });
 
+test("weather remains visible and navigable while its animation loads or fails", () => {
+  assert.deepEqual(
+    flow.getWeatherScreenPlan({ hasWeather: true, frameLoadState: "loading", framesAvailable: false }),
+    { drawAnimatedFrame: false, drawFallback: true, allowNavigation: true }
+  );
+  assert.deepEqual(
+    flow.getWeatherScreenPlan({ hasWeather: true, frameLoadState: "error", framesAvailable: false }),
+    { drawAnimatedFrame: false, drawFallback: true, allowNavigation: true }
+  );
+  assert.deepEqual(
+    flow.getWeatherScreenPlan({ hasWeather: true, frameLoadState: "ready", framesAvailable: true }),
+    { drawAnimatedFrame: true, drawFallback: false, allowNavigation: true }
+  );
+});
+
 test("unknown states do not expose a cutscene skip target", () => {
   assert.equal(flow.getSkipTarget("ready"), null);
 });
@@ -22,6 +37,32 @@ test("new target returns to question entry and leaves fishing audio", () => {
   assert.equal(plan.stopFishingMusic, true);
   assert.equal(plan.startFishingMusic, false);
   assert.equal(plan.startTvStatic, false);
+});
+
+test("new target clears every transient flag from the previous TV pass", () => {
+  const staleSecondPassState = {
+    skipHoldStartedAt: 1234,
+    skipConsumed: true,
+    questionFocusAfterSpaceRelease: true,
+    questionBeforeCutsceneSkip: "old target",
+    remoteButtonSoundPressIndex: 2,
+    tubeTvOpeningSoundPrestarted: true,
+    waterSelectOrigin: "result"
+  };
+  assert.deepEqual(
+    { ...staleSecondPassState, ...flow.NEW_TARGET_TRANSIENT_RESET },
+    {
+      skipHoldStartedAt: 0,
+      skipConsumed: false,
+      questionFocusAfterSpaceRelease: false,
+      questionBeforeCutsceneSkip: "",
+      remoteButtonSoundPressIndex: 0,
+      tubeTvOpeningSoundPrestarted: false,
+      waterSelectOrigin: null
+    }
+  );
+  assert.equal(flow.getSkipTarget("introRemote"), "weather");
+  assert.equal(flow.getSkipTarget("introTv"), "weather");
 });
 
 test("change location moves from result audio to TV static", () => {

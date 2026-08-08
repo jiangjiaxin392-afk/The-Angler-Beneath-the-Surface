@@ -30,6 +30,19 @@
     HOME: "cover"
   });
 
+  // A new target starts a second pass through the living-room/television
+  // sequence. None of the previous pass's held-key or audio pre-roll flags
+  // may survive into it, otherwise a skip can be consumed by stale state.
+  const NEW_TARGET_TRANSIENT_RESET = Object.freeze({
+    skipHoldStartedAt: 0,
+    skipConsumed: false,
+    questionFocusAfterSpaceRelease: false,
+    questionBeforeCutsceneSkip: "",
+    remoteButtonSoundPressIndex: 0,
+    tubeTvOpeningSoundPrestarted: false,
+    waterSelectOrigin: null
+  });
+
   const HOME_BUTTON_STATES = Object.freeze([
     "ready", "charging", "flying", "waiting", "bite", "hooked",
     "failed", "result", "archive"
@@ -83,6 +96,17 @@
       && Number.isFinite(biteAt)
       && activeTime > biteAt
       && isPlayableGeneratedAnswer(answerStatus, answer);
+  }
+
+  function getWeatherScreenPlan({ hasWeather = false, frameLoadState = null, framesAvailable = false } = {}) {
+    const drawAnimatedFrame = Boolean(
+      hasWeather && frameLoadState === "ready" && framesAvailable
+    );
+    return Object.freeze({
+      drawAnimatedFrame,
+      drawFallback: Boolean(hasWeather && !drawAnimatedFrame),
+      allowNavigation: Boolean(hasWeather)
+    });
   }
 
   function getStateIntegrityPlan(snapshot = {}) {
@@ -191,6 +215,7 @@
     STATE_GROUPS,
     CUTSCENE_TARGETS,
     FLOW_TARGETS,
+    NEW_TARGET_TRANSIENT_RESET,
     HOME_BUTTON_STATES,
     PLAYABLE_ANSWER_STATUSES,
     getSkipTarget,
@@ -198,6 +223,7 @@
     getHomePathname,
     getStateIntegrityPlan,
     getTransitionPlan,
+    getWeatherScreenPlan,
     isPlayableGeneratedAnswer,
     shouldBeginBite
   });

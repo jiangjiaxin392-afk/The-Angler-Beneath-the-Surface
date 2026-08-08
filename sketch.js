@@ -743,6 +743,7 @@ let waterMapBase;
 const waterLocationImages = [];
 const weatherFrameImages = {};
 const weatherFrameLoadState = {};
+const weatherFrameRetryCount = {};
 const WEATHER_SCENE_FRAME_COUNT = 8;
 const LOCATION_SCENE_FRAME_COUNT = 16;
 const LOCATION_SCENE_REVISION = "20260801-separated-v15";
@@ -2909,13 +2910,20 @@ function drawCrtBoot(bounds, elapsed) {
 
 function drawWeatherBroadcast(elapsed) {
   if (game.weatherIndex < 0) game.weatherIndex = floor(random(WEATHER_CONDITIONS.length));
-  const weather = WEATHER_CONDITIONS[game.weatherIndex];
+  let weather = WEATHER_CONDITIONS[game.weatherIndex];
+  if (!weather) {
+    game.weatherIndex = 0;
+    weather = WEATHER_CONDITIONS[0];
+  }
   ensureWeatherFrames(weather.id);
   const bounds = getCrtSafeBounds(TV_FULLSCREEN.screen);
   const frames = weatherFrameImages[weather.id] || [];
-  const framesReady = weatherFrameLoadState[weather.id] === "ready"
-    && frames.length > 0
-    && frames.every(Boolean);
+  const screenPlan = window.AnglerGameFlow.getWeatherScreenPlan({
+    hasWeather: Boolean(weather),
+    frameLoadState: weatherFrameLoadState[weather.id],
+    framesAvailable: frames.length > 0 && frames.every(Boolean)
+  });
+  let framesReady = screenPlan.drawAnimatedFrame;
   const frameIndex = framesReady
     ? floor(elapsed / TV_FULLSCREEN.frameDuration) % frames.length
     : 0;
@@ -2926,34 +2934,55 @@ function drawWeatherBroadcast(elapsed) {
     fill("#071319");
     rect(bounds.x, bounds.y, bounds.w, bounds.h);
     if (framesReady) {
-      image(frames[frameIndex], bounds.x, bounds.y, bounds.w, bounds.h);
-    } else {
+      framesReady = drawWeatherFrameSafely(weather.id, frames[frameIndex], bounds);
+    }
+    if (!framesReady) {
       drawWeatherLoadingSignal(bounds);
     }
 
-    if (framesReady) {
-      noStroke();
-      fill(7, 19, 25, 218);
-      rect(bounds.x + 54, bounds.y + 48, 500, 174);
-      fill(weather.accent);
-      textAlign(LEFT, TOP);
-      textStyle(BOLD);
-      textSize(52);
-      text(weather.title, bounds.x + 82, bounds.y + 67);
-      fill("#F4EBCF");
-      textSize(25);
-      text(weather.status, bounds.x + 82, bounds.y + 132);
-      fill("#C5D6D3");
-      textSize(17);
-      text(weather.note, bounds.x + 82, bounds.y + 174, 445, 46);
-    }
+    // The condition and navigation stay available even while an animation is
+    // loading or recovering. A missing decorative frame must never trap an
+    // exhibition visitor on an empty CRT screen.
+    noStroke();
+    fill(7, 19, 25, 218);
+    rect(bounds.x + 54, bounds.y + 48, 500, 174);
+    fill(weather.accent);
+    textAlign(LEFT, TOP);
+    textStyle(BOLD);
+    textSize(52);
+    text(weather.title, bounds.x + 82, bounds.y + 67);
+    fill("#F4EBCF");
+    textSize(25);
+    text(weather.status, bounds.x + 82, bounds.y + 132);
+    fill("#C5D6D3");
+    textSize(17);
+    text(weather.note, bounds.x + 82, bounds.y + 174, 445, 46);
 
     drawCrtScanlines(bounds, 30);
     drawCrtNoise(bounds, 0.025);
   }, getCrtScreenRadius(bounds));
 
   image(weatherTvFrameHd, 0, 0, W, H);
-  if (framesReady) drawSelectWaterButton(getWeatherButtonBounds(bounds), elapsed);
+  drawSelectWaterButton(getWeatherButtonBounds(bounds), elapsed);
+}
+
+function drawWeatherFrameSafely(weatherId, frame, bounds) {
+  try {
+    image(frame, bounds.x, bounds.y, bounds.w, bounds.h);
+    return true;
+  } catch (error) {
+    const retries = weatherFrameRetryCount[weatherId] || 0;
+    console.error(`Unable to draw weather frame: ${weatherId}`, error);
+    if (retries < 1) {
+      weatherFrameRetryCount[weatherId] = retries + 1;
+      delete weatherFrameLoadState[weatherId];
+      delete weatherFrameImages[weatherId];
+      ensureWeatherFrames(weatherId);
+    } else {
+      weatherFrameLoadState[weatherId] = "error";
+    }
+    return false;
+  }
 }
 
 function ensureWeatherFrames(weatherId) {
@@ -5677,8 +5706,9 @@ function mousePressed(event) {
 
   if (game.state === "weather") {
     const weather = WEATHER_CONDITIONS[game.weatherIndex];
-    const weatherReady = weather && weatherFrameLoadState[weather.id] === "ready";
-    if (weatherReady && pointInRect(mouseX, mouseY, getWeatherButtonBounds())) {
+    const button = getWeatherButtonBounds(getCrtSafeBounds(TV_FULLSCREEN.screen));
+    const screenPlan = window.AnglerGameFlow.getWeatherScreenPlan({ hasWeather: Boolean(weather) });
+    if (screenPlan.allowNavigation && pointInRect(mouseX, mouseY, button)) {
       setState("waterSelect");
     }
     return false;
@@ -5883,8 +5913,8 @@ function keyPressed() {
   if (game.skipConsumed && (key === " " || keyCode === 32)) return false;
   if (game.state === "weather" && (keyCode === ENTER || keyCode === RETURN || key === " ")) {
     const weather = WEATHER_CONDITIONS[game.weatherIndex];
-    const weatherReady = weather && weatherFrameLoadState[weather.id] === "ready";
-    if (weatherReady && millis() - game.stateStarted >= 1700) {
+    const screenPlan = window.AnglerGameFlow.getWeatherScreenPlan({ hasWeather: Boolean(weather) });
+    if (screenPlan.allowNavigation && millis() - game.stateStarted >= 1700) {
       setState("waterSelect");
     }
     return false;
@@ -6080,6 +6110,8 @@ function startNewTarget() {
   game.judgement = null;
   game.currentKept = false;
   game.targetLockAt = 0;
+  Object.assign(game, window.AnglerGameFlow.NEW_TARGET_TRANSIENT_RESET);
+  game.weatherIndex = -1;
   game.waterIndex = -1;
   game.waterSelectAt = 0;
   setState(window.AnglerGameFlow.FLOW_TARGETS.NEW_TARGET);
