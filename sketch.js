@@ -235,6 +235,12 @@ const CATCHES = [
   }
 ];
 
+const CATCH_ANSWER_FLAGS = Object.freeze({
+  weeds: "OFF-COURSE ANSWER",
+  rubbish: "CHAOTIC ANSWER",
+  boot: "STALE ANSWER"
+});
+
 const CAST_VARIATION_ANGLES = [
   "balanced starting point",
   "practical next steps",
@@ -5146,11 +5152,12 @@ function drawCatchResultInfo(catchData, profile, question) {
   textStyle(BOLD);
   textSize(20);
   text("WHAT SURFACED", answerPanel.x + textInset, answerPanel.y + 44);
-  if (["weeds", "rubbish"].includes(catchData.id)) {
+  const answerFlag = CATCH_ANSWER_FLAGS[catchData.id];
+  if (answerFlag) {
     fill("#F02B91");
     textAlign(RIGHT, BASELINE);
     text(
-      catchData.id === "rubbish" ? "CHAOTIC ANSWER" : "OFF-COURSE ANSWER",
+      answerFlag,
       answerPanel.x + answerPanel.w - textInset,
       answerPanel.y + 44
     );
@@ -5478,11 +5485,12 @@ function drawArchiveInfoV2(catchData, profile, selectedEntry) {
   textStyle(BOLD);
   textSize(24);
   text("WHAT SURFACED", answerPanel.x + answerInset, answerPanel.y + 76);
-  if (["weeds", "rubbish"].includes(catchData.id)) {
+  const answerFlag = CATCH_ANSWER_FLAGS[catchData.id];
+  if (answerFlag) {
     fill("#F02B91");
     textAlign(RIGHT, BASELINE);
     text(
-      catchData.id === "rubbish" ? "CHAOTIC ANSWER" : "OFF-COURSE ANSWER",
+      answerFlag,
       answerPanel.x + answerPanel.w - answerInset,
       answerPanel.y + 76
     );

@@ -23,8 +23,16 @@ test("weeds answers visibly abandon the original question", () => {
   assert.match(answer, /原来的问题/);
 });
 
+test("boot answers are unmistakably undated instead of looking normally useful", () => {
+  const answer = shaper.shapeAnswer("推荐去明婷饭店，也可以试试甘记肥肠粉。", "boot");
+  assert.match(answer, /^旧资料摘录（年份不明）/);
+  assert.match(answer, /没有可靠日期/);
+  assert.match(answer, /不能视为现时信息/);
+});
+
 test("current and compatible server revisions prevent double shaping", () => {
   const original = "已经整形的答案";
   assert.equal(shaper.shapeResponseAnswer({ answer: original, answerShapeApplied: true }, "rubbish"), original);
   assert.equal(shaper.responseHasShape({ revision: "20260804-catch-shape-v4" }, "weeds"), true);
+  assert.equal(shaper.responseHasShape({ revision: shaper.CURRENT_REVISION }, "boot"), true);
 });

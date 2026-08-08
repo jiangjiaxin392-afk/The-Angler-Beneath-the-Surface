@@ -32,7 +32,7 @@ Every real cast creates a new `game.currentCast` with a unique request ID and fr
 
 `game.currentCatch` is a runtime result object rather than a direct reference to static catch data. It uses explicit fallback text only while OpenAI is unavailable, delayed or failed. A late AI result replaces the fallback and also updates an already-saved matching archive entry. Saved catches retain their actual answer, response label, summary, missing checks, configuration, variation angle, request ID, fingerprint, semantic core, answer angle and revision.
 
-The `RIVER RUBBISH` archetype must display `CHAOTIC ANSWER`. Its generated text must remain related to the current question while being visibly disordered through repetition, fragments or mixed structure. It must not use unrelated canned jokes or fabricate dangerous facts. `YELLOW PERCH` is a brief answer and receives no warning label.
+The `RIVER RUBBISH` archetype must display `CHAOTIC ANSWER`. Its generated text must remain related to the current question while being visibly disordered through repetition, fragments or mixed structure. It must not use unrelated canned jokes or fabricate dangerous facts. `RIVER WEED` displays `OFF-COURSE ANSWER` and must visibly abandon the requested task. `OLD BOOT` displays `STALE ANSWER`; its answer is forced into an explicitly undated excerpt whose current validity is unresolved. `YELLOW PERCH` is a brief answer and receives no warning label.
 
 ## Server AI implementation
 

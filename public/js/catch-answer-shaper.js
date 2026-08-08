@@ -1,12 +1,13 @@
 (function attachCatchAnswerShaper(root) {
   "use strict";
 
-  const CURRENT_REVISION = "20260804-catch-shape-v5";
-  const SHAPED_CATCH_IDS = Object.freeze(["perch", "weeds", "rubbish"]);
+  const CURRENT_REVISION = "20260808-catch-shape-v6";
+  const SHAPED_CATCH_IDS = Object.freeze(["perch", "weeds", "rubbish", "boot"]);
   const COMPATIBLE_REVISIONS = Object.freeze({
     perch: Object.freeze(["20260804-catch-shape-v3", "20260804-catch-shape-v4", CURRENT_REVISION]),
     rubbish: Object.freeze(["20260804-catch-shape-v3", "20260804-catch-shape-v4", CURRENT_REVISION]),
-    weeds: Object.freeze(["20260804-catch-shape-v4", CURRENT_REVISION])
+    weeds: Object.freeze(["20260804-catch-shape-v4", CURRENT_REVISION]),
+    boot: Object.freeze([CURRENT_REVISION])
   });
 
   function isShapedCatch(catchId) {
@@ -70,10 +71,20 @@
     return `One quick thought: ${shortFragment}. But wait—this is really making me think about why people compare similar things, how that impression spreads, and why the discussion itself grows louder. The original question? Leave it aside for now.`;
   }
 
+  function makeBootStale(answer) {
+    const value = String(answer || "").trim();
+    if (!value) return value;
+    if (/[\u3400-\u9fff]/u.test(value)) {
+      return `旧资料摘录（年份不明）：${value}\n\n这份资料没有可靠日期；其中的店名、地址、营业状态和当前口碑均未核实，不能视为现时信息。`;
+    }
+    return `UNDATED GUIDE EXCERPT: ${value}\n\nThis material has no reliable date. Its names, locations, opening status and present-day reputation have not been verified as current.`;
+  }
+
   function shapeAnswer(answer, catchId) {
     if (catchId === "perch") return makePerchBrief(answer);
     if (catchId === "rubbish") return makeRubbishChaotic(answer);
     if (catchId === "weeds") return makeWeedsOffCourse(answer);
+    if (catchId === "boot") return makeBootStale(answer);
     return String(answer || "").trim();
   }
 
@@ -97,6 +108,7 @@
     makePerchBrief,
     makeRubbishChaotic,
     makeWeedsOffCourse,
+    makeBootStale,
     responseHasShape,
     shapeAnswer,
     shapeResponseAnswer

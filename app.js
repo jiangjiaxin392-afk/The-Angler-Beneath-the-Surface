@@ -9,7 +9,7 @@ const presentationReserve = require("./server/presentation-reserve.js");
 
 const port = Number(process.env.PORT) || 3001;
 const listenHost = String(process.env.ANGLER_HOST || "127.0.0.1").trim();
-const serverRevision = "20260808-answer-diversity-v16";
+const serverRevision = "20260808-catch-shape-v17";
 const projectRoot = __dirname;
 const publicRoot = path.join(projectRoot, "public");
 const publicEntryFiles = new Set(["index.html", "sketch.js", "style.css"]);
@@ -387,7 +387,7 @@ function generationInstructions(catchId) {
     carp: "Give a relevant but overfull answer with weak prioritisation and too many considerations.",
     weeds: "Begin with at most one small relevant fragment, then visibly abandon the user's question and drift into a neighbouring discussion. Explicitly leave the original question unresolved. The result must read as an off-course answer, not a cautious or complete answer.",
     rubbish: "Create a visibly chaotic answer related to the question. Use at least five short fragments, interrupt the order with an explicit false start such as 'wait' or 'no, back up', repeat one useful point, jump away from it and then return without a clean conclusion. Do not write a normal coherent paragraph. Do not add unrelated jokes or invent facts that were not already part of the answer.",
-    boot: "Give an answer shaped by stale or undated assumptions. Avoid presenting time-sensitive claims as verified current facts."
+    boot: "Write the answer as an excerpt from an old or undated guide. Its advice may remain plausible, but its date, current availability and present-day validity must stay visibly unresolved. Do not repair it by ending with useful current-checking advice; the response itself must remain stale."
   };
   return shapes[catchId] || shapes.trout;
 }
@@ -695,11 +695,15 @@ async function handleGeneration(request, response, body) {
       ? "The response stays on topic, but its ordering, repetition and conclusion are deliberately unreliable."
       : catchId === "weeds"
       ? "The response catches one relevant fragment, then visibly drifts away and leaves the original question unresolved."
+      : catchId === "boot"
+      ? "A coherent-looking answer presented as undated material whose current validity is unresolved."
       : cleanText(result.parsed.summary, 800),
     missing: catchId === "rubbish"
       ? ["CLEAR ORDER", "CONSISTENT CONCLUSION"]
       : catchId === "weeds"
       ? ["DIRECT ANSWER", "RELEVANT CONCLUSION"]
+      : catchId === "boot"
+      ? ["RELIABLE DATE", "CURRENT VERIFICATION"]
       : Array.isArray(result.parsed.missing) ? result.parsed.missing.slice(0, 3).map((item) => cleanText(item, 160)) : [],
     answerFingerprint: fingerprint,
     answerDetailLevel: lengthGuidance.level,
