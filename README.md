@@ -177,6 +177,7 @@ flowchart LR
 - strict request-body size, allowed-value validation and per-client rate limiting;
 - 30-second client and provider timeouts;
 - structured answer generation with bounded retries when output is empty or invalid;
+- semantic-core tracking that distinguishes fixed, limited and open answer spaces and rejects shallow paraphrases of recent catches;
 - privacy-safe error responses and security headers;
 - exact presentation reserve checked before any OpenAI request.
 
@@ -190,8 +191,10 @@ The project is designed to fail visibly rather than silently fabricate success.
 
 - An answer must exist before the bite can begin. Generation time is therefore absorbed into the waiting phase of the cast.
 - When OpenAI cannot return a valid answer, the fishing interface reports no response instead of landing a fake fallback answer.
-- The exact EXAMPLE question has a server-side presentation reserve containing four curated answers for each of the eight catch types: 32 responses in total.
-- Reserve responses rotate without immediate repetition. Repeated request IDs are idempotent, so a retry cannot change the answer for the same cast.
+- The exact EXAMPLE question has a server-side presentation reserve built around ten distinct London attraction cores shared by every catch type.
+- The first six visible answers to an open question must use different semantic cores. Later catches prefer a new core and may revisit one only through a genuinely different angle; changing water, tackle or fish shape cannot disguise a repeated idea as a new answer.
+- Each target retains at most ten compact core-and-angle records rather than retransmitting complete answers. New Target and Home clear this history; changing water or tackle preserves it.
+- Reserve responses use the same core history as live OpenAI answers. Repeated request IDs are idempotent, so a retry cannot change the answer for the same cast.
 - Any edited or different question still requires the live OpenAI route.
 - Unknown or invalid game states recover to a safe state instead of leaving a blank screen.
 - Home, New Target, Change Tackle, Change Location, cutscene skip and landing completion have explicit transition tests.
@@ -201,7 +204,7 @@ The reserve is an exhibition continuity mechanism, not a general offline AI syst
 
 ## Testing and Preflight
 
-The current suite contains **68 automated tests** covering:
+The current suite contains **74 automated tests** covering:
 
 - AI request validation, cancellation, timeouts, retries and privacy-safe failure codes;
 - audio playback, volume clamping, sequencing and safe recovery;

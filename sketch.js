@@ -257,7 +257,7 @@ const CATCH_GENERATION_GUIDANCE = {
   boot: "Give advice framed as potentially stale: make dates, current validity or source freshness visibly unresolved."
 };
 
-const AI_PREP_REVISION = "20260804-catch-shape-v5";
+const AI_PREP_REVISION = "20260808-answer-diversity-v6";
 
 const EXAMPLE_QUESTION = "What attractions should I visit in London?";
 
@@ -6151,6 +6151,11 @@ function createCastRecord() {
     answer: null,
     summary: null,
     missing: [],
+    diversityMode: null,
+    answerCoreId: null,
+    answerCoreSummary: null,
+    answerAngleId: null,
+    answerAngleSummary: null,
     aiStatus: "not-requested",
     requiresGeneration: true
   };
@@ -6162,6 +6167,16 @@ function buildAiRequestPayload(castRecord) {
   const water = WATER_LOCATIONS.find((item) => item.id === castRecord.waterId) || WATER_LOCATIONS[0];
   const tackle = TACKLE_PROFILES.find((item) => item.id === castRecord.tackleId) || TACKLE_PROFILES[0];
   const catchDefinition = CATCHES.find((item) => item.id === castRecord.catchId) || CATCHES[0];
+  const answerHistory = game.recentCastSignatures
+    .filter((item) => item.answerCoreId && item.answerCoreSummary)
+    .slice(0, 10)
+    .map((item) => ({
+      diversityMode: item.diversityMode || null,
+      answerCoreId: item.answerCoreId,
+      answerCoreSummary: item.answerCoreSummary,
+      answerAngleId: item.answerAngleId || item.answerCoreId,
+      answerAngleSummary: item.answerAngleSummary || item.answerCoreSummary
+    }));
   return {
     schemaVersion: AI_PREP_REVISION,
     requestId: castRecord.id,
@@ -6189,11 +6204,19 @@ function buildAiRequestPayload(castRecord) {
       weatherId: castRecord.weatherId,
       note: "Weather selected the gameplay difficulty and answer archetype probability; it must not rewrite the user's question."
     },
-    avoidRepeating: game.recentCastSignatures.slice(0, 5),
+    answerDiversity: {
+      diversityMode: answerHistory[0]?.diversityMode || null,
+      history: answerHistory
+    },
     expectedOutput: {
       answer: "string",
       summary: "string",
       missing: "string[]",
+      diversityMode: "fixed | limited | open",
+      answerCoreId: "string",
+      answerCoreSummary: "string",
+      answerAngleId: "string",
+      answerAngleSummary: "string",
       answerFingerprint: "string"
     }
   };
@@ -6218,6 +6241,11 @@ function requestAiCatch(castRecord) {
     castRecord.answer = window.AnglerCatchAnswers.shapeResponseAnswer(result, castRecord.catchId);
     castRecord.summary = result.summary;
     castRecord.missing = Array.isArray(result.missing) ? [...result.missing] : [];
+    castRecord.diversityMode = result.diversityMode || null;
+    castRecord.answerCoreId = result.answerCoreId || null;
+    castRecord.answerCoreSummary = result.answerCoreSummary || null;
+    castRecord.answerAngleId = result.answerAngleId || null;
+    castRecord.answerAngleSummary = result.answerAngleSummary || null;
     castRecord.answerFingerprint = result.answerFingerprint || null;
     castRecord.aiStatus = result.source || "openai";
     castRecord.aiRevision = result.revision || null;
@@ -6242,6 +6270,11 @@ function applyGeneratedAnswer(castRecord) {
     savedEntry.answer = castRecord.answer;
     savedEntry.summary = castRecord.summary;
     savedEntry.missing = [...castRecord.missing];
+    savedEntry.diversityMode = castRecord.diversityMode;
+    savedEntry.answerCoreId = castRecord.answerCoreId;
+    savedEntry.answerCoreSummary = castRecord.answerCoreSummary;
+    savedEntry.answerAngleId = castRecord.answerAngleId;
+    savedEntry.answerAngleSummary = castRecord.answerAngleSummary;
     savedEntry.aiStatus = castRecord.aiStatus;
     savedEntry.aiRevision = castRecord.aiRevision;
     savedEntry.answerFingerprint = castRecord.answerFingerprint;
@@ -6310,6 +6343,11 @@ function buildRuntimeCatch(castRecord) {
     aiStatus: castRecord.aiStatus,
     aiRevision: castRecord.aiRevision || null,
     answerFingerprint: castRecord.answerFingerprint || null,
+    diversityMode: castRecord.diversityMode || null,
+    answerCoreId: castRecord.answerCoreId || null,
+    answerCoreSummary: castRecord.answerCoreSummary || null,
+    answerAngleId: castRecord.answerAngleId || null,
+    answerAngleSummary: castRecord.answerAngleSummary || null,
     requiresGeneration: false
   };
 }
@@ -6327,9 +6365,14 @@ function landRandomCatch() {
   game.recentCastSignatures.unshift({
     catchId: game.currentCatch.id,
     variationAngle: game.currentCast.variationAngle,
-    castId: game.currentCast.id
+    castId: game.currentCast.id,
+    diversityMode: game.currentCast.diversityMode || null,
+    answerCoreId: game.currentCast.answerCoreId || null,
+    answerCoreSummary: game.currentCast.answerCoreSummary || null,
+    answerAngleId: game.currentCast.answerAngleId || null,
+    answerAngleSummary: game.currentCast.answerAngleSummary || null
   });
-  if (game.recentCastSignatures.length > 8) game.recentCastSignatures.length = 8;
+  if (game.recentCastSignatures.length > 10) game.recentCastSignatures.length = 10;
   game.result = game.currentCatch.id;
   game.shake = 6;
   game.flash = 0.72;
@@ -6364,6 +6407,11 @@ function keepCurrentCatch() {
     aiStatus: game.currentCatch.aiStatus || "openai",
     aiRevision: game.currentCatch.aiRevision || null,
     answerFingerprint: game.currentCatch.answerFingerprint || null,
+    diversityMode: game.currentCatch.diversityMode || null,
+    answerCoreId: game.currentCatch.answerCoreId || null,
+    answerCoreSummary: game.currentCatch.answerCoreSummary || null,
+    answerAngleId: game.currentCatch.answerAngleId || null,
+    answerAngleSummary: game.currentCatch.answerAngleSummary || null,
     revision: AI_PREP_REVISION,
     savedAt: now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
   });

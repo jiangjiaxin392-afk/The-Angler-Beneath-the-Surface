@@ -15,32 +15,33 @@ test("the presentation reserve matches only the exact EXAMPLE question", () => {
   assert.equal(select("伦敦有什么好玩的？", "trout", "chinese"), null);
 });
 
-test("every catch type has four non-empty curated answers", () => {
+test("the presentation reserve contains ten distinct London cores", () => {
   assert.deepEqual(reserve.catchIds, ["bass", "trout", "pike", "perch", "carp", "weeds", "rubbish", "boot"]);
-  assert.equal(reserve.answerCountPerCatch, 4);
-  for (const catchId of reserve.catchIds) {
-    const select = deterministicSelector();
-    const entries = Array.from({ length: reserve.answerCountPerCatch }, (_, index) => (
-      select(reserve.QUESTION, catchId, `${catchId}-${index}`)
-    ));
-    assert.equal(new Set(entries.map((entry) => entry.answer)).size, 4, `Repeated answer in ${catchId}`);
-    for (const entry of entries) {
-      assert.ok(entry.answer.trim(), `Missing answer for ${catchId}`);
-      assert.ok(entry.summary.trim(), `Missing summary for ${catchId}`);
-      assert.ok(Array.isArray(entry.missing), `Missing limitations for ${catchId}`);
-    }
-  }
+  assert.equal(reserve.answerCountPerCatch, 10);
+  assert.equal(new Set(reserve.coreIds).size, 10);
 });
 
-test("a new cycle never immediately repeats the previous answer", () => {
-  for (const catchId of reserve.catchIds) {
-    const select = deterministicSelector();
-    const answers = Array.from({ length: 9 }, (_, index) => (
-      select(reserve.QUESTION, catchId, `${catchId}-cycle-${index}`).answer
-    ));
-    for (let index = 1; index < answers.length; index += 1) {
-      assert.notEqual(answers[index], answers[index - 1], `Immediate repeat in ${catchId}`);
-    }
+test("ten consecutive mixed catches use ten different semantic cores", () => {
+  const select = deterministicSelector();
+  const history = [];
+  const entries = [];
+  for (let index = 0; index < reserve.answerCountPerCatch; index += 1) {
+    const entry = select(
+      reserve.QUESTION,
+      reserve.catchIds[index % reserve.catchIds.length],
+      `mixed-${index}`,
+      { history, waterId: "daylight-river", promptConfiguration: { type: { name: "DIRECT" } } }
+    );
+    entries.push(entry);
+    history.unshift(entry);
+  }
+  assert.equal(new Set(entries.map((entry) => entry.answerCoreId)).size, 10);
+  for (const entry of entries) {
+    assert.ok(entry.answer.trim());
+    assert.ok(entry.summary.trim());
+    assert.equal(entry.diversityMode, "open");
+    assert.ok(entry.answerCoreSummary.trim());
+    assert.ok(entry.answerAngleId.trim());
   }
 });
 
@@ -49,9 +50,17 @@ test("the same request ID always returns the same answer without advancing the l
   const first = select(reserve.QUESTION, "perch", "same-cast");
   const repeated = select(reserve.QUESTION, "perch", "same-cast");
   assert.deepEqual(repeated, first);
+});
 
-  const following = Array.from({ length: 3 }, (_, index) => (
-    select(reserve.QUESTION, "perch", `next-cast-${index}`).answer
-  ));
-  assert.equal(new Set([first.answer, ...following]).size, 4);
+test("water and tackle routes still influence a protected example answer", () => {
+  const direct = deterministicSelector()(reserve.QUESTION, "trout", "direct", {
+    waterId: "daylight-river",
+    promptConfiguration: { type: { name: "DIRECT" } }
+  });
+  const searched = deterministicSelector()(reserve.QUESTION, "trout", "searched", {
+    waterId: "signal-canal",
+    promptConfiguration: { type: { name: "EVIDENCE-LED" } }
+  });
+  assert.equal(direct.answerCoreId, searched.answerCoreId);
+  assert.notEqual(direct.answer, searched.answer);
 });

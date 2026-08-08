@@ -7,7 +7,7 @@
 })(typeof window !== "undefined" ? window : null, function createServerAiModule() {
   "use strict";
 
-  const CLIENT_REVISION = "20260805-server-v5";
+  const CLIENT_REVISION = "20260808-answer-diversity-v6";
   const DEFAULT_RECOMMENDATION_TIMEOUT_MS = 30_000;
   const DEFAULT_GENERATION_TIMEOUT_MS = 30_000;
 
@@ -74,6 +74,15 @@
       && typeof data === "object"
       && typeof data.answer === "string"
       && data.answer.trim()
+      && ["fixed", "limited", "open"].includes(data.diversityMode)
+      && typeof data.answerCoreId === "string"
+      && data.answerCoreId.trim()
+      && typeof data.answerCoreSummary === "string"
+      && data.answerCoreSummary.trim()
+      && typeof data.answerAngleId === "string"
+      && data.answerAngleId.trim()
+      && typeof data.answerAngleSummary === "string"
+      && data.answerAngleSummary.trim()
     );
   }
 

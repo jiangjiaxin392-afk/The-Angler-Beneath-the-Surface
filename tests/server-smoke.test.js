@@ -4,6 +4,8 @@ const net = require("node:net");
 const path = require("node:path");
 const { after, before, test } = require("node:test");
 
+const presentationReserve = require("../server/presentation-reserve.js");
+
 const projectRoot = path.resolve(__dirname, "..");
 let serverProcess;
 let baseUrl;
@@ -67,7 +69,7 @@ test("status exposes the running server revision", async () => {
   assert.equal(response.status, 200);
   const status = await response.json();
   assert.equal(status.provider, "openai");
-  assert.equal(status.serverRevision, "20260805-server-v15");
+  assert.equal(status.serverRevision, "20260808-answer-diversity-v16");
   assert.equal(status.reasoningEffort, "low");
   assert.equal(typeof status.configured, "boolean");
 });
@@ -137,7 +139,11 @@ test("the exact presentation example returns its curated answer without OpenAI",
   assert.equal(response.status, 200);
   const result = await response.json();
   assert.equal(result.source, "presentation-reserve");
-  assert.ok(["Big Ben.", "Tower Bridge.", "British Museum.", "Greenwich."].includes(result.answer));
+  assert.ok(result.answer.endsWith("."));
+  assert.equal(result.diversityMode, "open");
+  assert.ok(presentationReserve.coreIds.includes(result.answerCoreId));
+  assert.ok(result.answerCoreSummary);
+  assert.ok(result.answerAngleId);
   assert.equal(result.attempts, 0);
 });
 

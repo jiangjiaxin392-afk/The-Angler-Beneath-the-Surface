@@ -4,11 +4,12 @@ const path = require("path");
 const crypto = require("crypto");
 const catchAnswerShaper = require("./public/js/catch-answer-shaper.js");
 const aiResilience = require("./server/ai-resilience.js");
+const answerDiversity = require("./server/answer-diversity.js");
 const presentationReserve = require("./server/presentation-reserve.js");
 
 const port = Number(process.env.PORT) || 3001;
 const listenHost = String(process.env.ANGLER_HOST || "127.0.0.1").trim();
-const serverRevision = "20260805-server-v15";
+const serverRevision = "20260808-answer-diversity-v16";
 const projectRoot = __dirname;
 const publicRoot = path.join(projectRoot, "public");
 const publicEntryFiles = new Set(["index.html", "sketch.js", "style.css"]);
@@ -271,9 +272,17 @@ const catchSchema = {
   properties: {
     answer: { type: "string" },
     summary: { type: "string" },
-    missing: { type: "array", items: { type: "string" } }
+    missing: { type: "array", items: { type: "string" } },
+    diversityMode: { type: "string", enum: answerDiversity.MODES },
+    answerCoreId: { type: "string" },
+    answerCoreSummary: { type: "string" },
+    answerAngleId: { type: "string" },
+    answerAngleSummary: { type: "string" }
   },
-  required: ["answer", "summary", "missing"]
+  required: [
+    "answer", "summary", "missing", "diversityMode", "answerCoreId",
+    "answerCoreSummary", "answerAngleId", "answerAngleSummary"
+  ]
 };
 
 function applyWaterRoutingRules(question, recommendation) {
@@ -426,19 +435,7 @@ function tackleMethodInstructions(promptConfiguration) {
 }
 
 function isArithmeticQuestion(question) {
-  const value = String(question || "")
-    .toLowerCase()
-    .replace(/[×x]/g, "*")
-    .replace(/÷/g, "/")
-    .replace(/[−–—]/g, "-")
-    .trim();
-  const expression = value
-    .replace(/^(?:what\s+is|calculate|compute|solve|请计算|计算|算一下)\s*/i, "")
-    .replace(/(?:等于多少|是多少|的结果|\?|？|=)+$/g, "")
-    .trim();
-  return /\d/.test(expression)
-    && /^[\d\s()+\-*/%.^]+$/.test(expression)
-    && /[+\-*/%^]/.test(expression);
+  return answerDiversity.isArithmeticQuestion(question);
 }
 
 function isNaturallyShortAnswerQuestion(question) {
@@ -552,8 +549,15 @@ async function handleGeneration(request, response, body) {
     return sendJson(response, 400, { error: "The selected location, tackle or catch type is invalid." });
   }
   const generationStartedAt = Date.now();
+  const diversityHistory = answerDiversity.cleanHistory(body.answerDiversity?.history);
+  const establishedDiversityMode = answerDiversity.lockedMode(question, diversityHistory);
 
-  const reserveAnswer = presentationReserve.getAnswer(question, catchId, requestId);
+  const reserveAnswer = presentationReserve.getAnswer(question, catchId, requestId, {
+    history: diversityHistory,
+    diversityMode: establishedDiversityMode,
+    waterId,
+    promptConfiguration: body.promptConfiguration
+  });
   if (reserveAnswer) {
     const answerFingerprint = crypto.createHash("sha256").update(reserveAnswer.answer).digest("hex").slice(0, 20);
     console.log(`[AI generation] catch=${catchId} source=${presentationReserve.SOURCE} attempts=0 durationMs=${Date.now() - generationStartedAt}`);
@@ -567,6 +571,11 @@ async function handleGeneration(request, response, body) {
       answer: reserveAnswer.answer,
       summary: reserveAnswer.summary,
       missing: reserveAnswer.missing,
+      diversityMode: reserveAnswer.diversityMode,
+      answerCoreId: reserveAnswer.answerCoreId,
+      answerCoreSummary: reserveAnswer.answerCoreSummary,
+      answerAngleId: reserveAnswer.answerAngleId,
+      answerAngleSummary: reserveAnswer.answerAngleSummary,
       answerFingerprint,
       answerDetailLevel: catchId === "perch" ? "minimal" : catchId === "carp" ? "overloaded" : "curated",
       model: presentationReserve.SOURCE,
@@ -580,7 +589,11 @@ async function handleGeneration(request, response, body) {
     modelSelection: body.modelSelection,
     promptConfiguration: body.promptConfiguration,
     answerShape: body.answerShape,
-    avoidRepeating: Array.isArray(body.avoidRepeating) ? body.avoidRepeating.slice(0, 12) : []
+    answerDiversity: {
+      diversityMode: establishedDiversityMode,
+      strictNewCoreCount: answerDiversity.STRICT_NEW_CORE_COUNT,
+      history: diversityHistory
+    }
   };
   const lengthGuidance = answerLengthGuidance(question, catchId, body.promptConfiguration);
   const baseInstructions = [
@@ -592,7 +605,17 @@ async function handleGeneration(request, response, body) {
     "Weather is deliberately absent because it controls game difficulty and catch probability, not answer content.",
     generationInstructions(catchId),
     lengthGuidance.instruction,
-    "Vary wording and emphasis from the recent fingerprints or summaries supplied.",
+    "Classify the question's answer space as diversityMode fixed, limited or open. Use fixed only when one canonical result must remain the same, such as simple arithmetic or a single settled fact. Use limited when the central result is stable but several genuinely useful supporting angles exist. Use open for recommendations, creative prompts, plans and questions with multiple independently useful answers.",
+    "Identify the semantic subject of this answer with answerCoreId and a short answerCoreSummary. IDs must be stable: the same place, proposal, reason or solution must keep the same ID even when wording changes. Identify the particular perspective with answerAngleId and answerAngleSummary.",
+    establishedDiversityMode
+      ? `The established diversityMode is ${establishedDiversityMode}; do not change it.`
+      : "Choose the diversityMode honestly from the question rather than from the desired answer style.",
+    diversityHistory.length === 0
+      ? "This is the first visible answer for the target question. Choose one useful semantic core."
+      : diversityHistory.length < answerDiversity.STRICT_NEW_CORE_COUNT
+        ? "The supplied history contains earlier visible answers. For an open question, choose a genuinely different core, not a synonym, neighbouring label or paraphrase of an earlier core. For a limited question, keep the truthful central result but use a genuinely different supporting angle."
+        : "Prefer a new core. If a previous core must be revisited, use a genuinely new angle that adds different information or reasoning; never disguise the same idea with new sentence structure.",
+    "Location and tackle must continue to affect research route, emphasis, tone, depth and structure, but they must not erase the semantic-diversity rules. Catch type changes answer quality and shape, not the identity of a repeated core.",
     "Return plain readable prose only: no Markdown markers, no raw URLs, no link syntax and no citation markup. Name a source in prose only when it materially helps.",
     "summary must briefly describe the answer's quality for the catch archive. missing must list zero to three concise limitations, not repeat the answer."
   ];
@@ -608,7 +631,7 @@ async function handleGeneration(request, response, body) {
       result = await requestOpenAi({
         request,
         waterId,
-        maxOutputTokens: catchId === "carp" ? 2200 : catchId === "perch" ? 700 : 1500,
+        maxOutputTokens: catchId === "carp" ? 2200 : catchId === "perch" ? 900 : 1500,
         schema: catchSchema,
         schemaName: "angler_catch",
         instructions: [
@@ -620,11 +643,18 @@ async function handleGeneration(request, response, body) {
       answer = cleanText(result.parsed.answer, 12_000);
       answer = catchAnswerShaper.shapeAnswer(answer, catchId);
       const qualityProblem = validateGeneratedAnswer(answer, lengthGuidance, question, catchId);
-      if (!qualityProblem) {
+      const diversityCheck = answerDiversity.validateCandidate({
+        question,
+        history: diversityHistory,
+        candidate: result.parsed
+      });
+      const diversityProblem = diversityCheck.error || null;
+      if (!qualityProblem && !diversityProblem) {
+        result.diversity = diversityCheck;
         console.log(`[AI attempt] catch=${catchId} water=${waterId} attempt=${attempts} result=accepted durationMs=${Date.now() - attemptStartedAt}`);
         break;
       }
-      lastError = Object.assign(new Error(qualityProblem), {
+      lastError = Object.assign(new Error(qualityProblem || diversityProblem), {
         failureCode: "quality-rejected",
         statusCode: 502
       });
@@ -656,6 +686,11 @@ async function handleGeneration(request, response, body) {
     answerShapeRevision: catchAnswerShaper.CURRENT_REVISION,
     requestId,
     answer,
+    diversityMode: result.diversity.mode,
+    answerCoreId: result.diversity.answerCoreId,
+    answerCoreSummary: result.diversity.answerCoreSummary,
+    answerAngleId: result.diversity.answerAngleId,
+    answerAngleSummary: result.diversity.answerAngleSummary,
     summary: catchId === "rubbish"
       ? "The response stays on topic, but its ordering, repetition and conclusion are deliberately unreliable."
       : catchId === "weeds"
