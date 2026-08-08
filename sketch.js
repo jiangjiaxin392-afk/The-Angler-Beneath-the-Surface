@@ -646,6 +646,9 @@ const game = {
   archiveReturnState: "ready",
   question: "",
   questionFocused: false,
+  questionScreening: false,
+  questionScreeningCode: "",
+  questionScreeningNonce: 0,
   aiRecommendation: null,
   recommendations: [],
   recommendationDeck: [],
@@ -1692,6 +1695,9 @@ function resetExhibitionData(nextState) {
     archiveReturnState: "ready",
     question: "",
     questionFocused: false,
+    questionScreening: false,
+    questionScreeningCode: "",
+    questionScreeningNonce: 0,
     aiRecommendation: null,
     recommendations: [],
     recommendationDeck: [],
@@ -3456,6 +3462,20 @@ function drawTimedLivingOverlay(frames, elapsed, frameDurations) {
   return index;
 }
 
+function questionScreeningMessage() {
+  if (game.questionScreening) return "CHECKING EXHIBITION SIGNAL...";
+  if (["unsafe-content", "exhibition-out-of-scope"].includes(game.questionScreeningCode)) {
+    return "TARGET OUT OF BOUNDS · CHOOSE A DIFFERENT QUESTION";
+  }
+  if (game.questionScreeningCode) return "SIGNAL CHECK FAILED · TRY AGAIN";
+  return "";
+}
+
+function questionConfirmLabel(lockedLabel) {
+  if (game.questionScreening) return "CHECKING SIGNAL";
+  return game.targetLockAt ? lockedLabel : "SET THIS TARGET";
+}
+
 function drawLivingQuestion(now) {
   image(livingThoughtUi, 124, 70, 1672, 941);
 
@@ -3479,7 +3499,8 @@ function drawLivingQuestion(now) {
       colour: game.question ? "#18252A" : "#687A78",
       scrollColour: "#D6477E",
       sanitise: false,
-      followEnd: game.questionFocused
+      followEnd: game.questionFocused,
+      alwaysShowScrollbar: true
     }
   );
 
@@ -3505,6 +3526,15 @@ function drawLivingQuestion(now) {
     example.y + example.h / 2
   );
 
+  const screeningMessage = questionScreeningMessage();
+  if (screeningMessage) {
+    fill(game.questionScreening ? "#40585B" : "#A92A52");
+    textAlign(CENTER, CENTER);
+    textSize(15);
+    textStyle(BOLD);
+    text(screeningMessage, example.x, example.y + example.h + 8, example.w, 28);
+  }
+
   drawLivingTargetFish();
 
   const confirm = LIVING_QUESTION_BOUNDS.confirm;
@@ -3513,7 +3543,7 @@ function drawLivingQuestion(now) {
   textAlign(CENTER, CENTER);
   textSize(27);
   textStyle(BOLD);
-  text(game.targetLockAt ? "TARGET FOUND" : "SET THIS TARGET", confirm.x + confirm.w / 2, confirm.y + confirm.h / 2 + 2);
+  text(questionConfirmLabel("TARGET FOUND"), confirm.x + confirm.w / 2, confirm.y + confirm.h / 2 + 2);
   textAlign(LEFT, BASELINE);
 }
 
@@ -4083,7 +4113,8 @@ function drawQuestionScreen(now) {
       colour: game.question ? C.paper : C.hillShadow,
       scrollColour: C.yellow,
       sanitise: false,
-      followEnd: game.questionFocused
+      followEnd: game.questionFocused,
+      alwaysShowScrollbar: true
     }
   );
   fill(game.question.length >= QUESTION_MAX_LENGTH ? "#F02B91" : C.mist);
@@ -4097,8 +4128,16 @@ function drawQuestionScreen(now) {
   }
 
   drawUiCenteredText("EXAMPLE", QUESTION_BOUNDS.example, 18, C.ink, 0);
+  const screeningMessage = questionScreeningMessage();
+  if (screeningMessage) {
+    fill(game.questionScreening ? C.mist : "#F02B91");
+    textAlign(CENTER, CENTER);
+    textStyle(BOLD);
+    textSize(18);
+    text(screeningMessage, 790, 776, 930, 34);
+  }
   const canConfirm = game.question.trim().length > 0;
-  drawUiCenteredText(game.targetLockAt ? "TARGET LOCKING" : "SET THIS TARGET", QUESTION_BOUNDS.confirm, 30, canConfirm ? C.yellow : C.hillShadow, 0);
+  drawUiCenteredText(questionConfirmLabel("TARGET LOCKING"), QUESTION_BOUNDS.confirm, 30, canConfirm ? C.yellow : C.hillShadow, 0);
 }
 
 function drawTargetSignal(now) {
@@ -4128,8 +4167,15 @@ function drawTargetSignal(now) {
 }
 
 function noteQuestionEdit() {
+  if (game.questionScreening) {
+    game.questionScreening = false;
+    game.questionScreeningNonce += 1;
+    window.AnglerAI?.cancelAll?.();
+  }
   game.lastQuestionEditAt = millis();
   game.aiRecommendation = null;
+  game.questionScreeningCode = "";
+  updateAccessibleStatus();
   if (targetShadowFrames.length > 0) {
     game.targetShadowIndex = (game.targetShadowIndex + 1) % targetShadowFrames.length;
   }
@@ -4169,7 +4215,8 @@ function drawTackleScreen() {
       lineHeight: 34,
       colour: "#F0E6C8",
       scrollColour: "#F02B91",
-      verticalAlign: "center"
+      verticalAlign: "center",
+      alwaysShowScrollbar: true
     }
   );
 
@@ -5178,7 +5225,13 @@ function drawCatchResultInfo(catchData, profile, question) {
       h: answerPanel.h - 158
     },
     "resultAnswer",
-    { fontSize: 27, lineHeight: 36, colour: "#F0E6C8", scrollColour: "#5DD4C8" }
+    {
+      fontSize: 27,
+      lineHeight: 36,
+      colour: "#F0E6C8",
+      scrollColour: "#5DD4C8",
+      alwaysShowScrollbar: true
+    }
   );
 
   const backpackIsFull = game.inventory.length >= ARCHIVE_MAX_CATCHES && !game.currentKept;
@@ -5505,7 +5558,13 @@ function drawArchiveInfoV2(catchData, profile, selectedEntry) {
       h: answerPanel.h - 229
     },
     "archiveAnswer",
-    { fontSize: 30, lineHeight: 39, colour: "#F0E6C8", scrollColour: "#5DD4C8" }
+    {
+      fontSize: 30,
+      lineHeight: 39,
+      colour: "#F0E6C8",
+      scrollColour: "#5DD4C8",
+      alwaysShowScrollbar: true
+    }
   );
 
   fill("#F0C64F");
@@ -5975,13 +6034,49 @@ function keyTyped() {
   return true;
 }
 
-function confirmQuestion() {
+async function confirmQuestion() {
   game.question = game.question.trim();
-  if (!game.question || game.targetLockAt > 0) return;
-  requestAiRecommendation(game.question);
+  if (!game.question || game.targetLockAt > 0 || game.questionScreening) return;
   syncQuestionInputValue();
   setQuestionFocus(false);
-  game.targetLockAt = millis();
+  game.questionScreening = true;
+  game.questionScreeningCode = "";
+  game.questionScreeningNonce += 1;
+  const nonce = game.questionScreeningNonce;
+  const questionSnapshot = game.question;
+  const sessionIdSnapshot = game.exhibitionSessionId;
+  const adapter = window.AnglerAI;
+
+  try {
+    if (!adapter || typeof adapter.screenQuestion !== "function") {
+      throw Object.assign(new Error("The exhibition safety check is unavailable."), { code: "screening-unavailable" });
+    }
+    const decision = await adapter.screenQuestion({ question: questionSnapshot });
+    if (game.exhibitionSessionId !== sessionIdSnapshot || !game.exhibitionSessionActive) return;
+    if (game.question !== questionSnapshot || game.questionScreeningNonce !== nonce) return;
+    if (!decision.allowed) {
+      game.questionScreeningCode = decision.code || "question-blocked";
+      setQuestionFocus(true);
+      updateAccessibleStatus();
+      return;
+    }
+    requestAiRecommendation(questionSnapshot);
+    game.targetLockAt = millis();
+  } catch (error) {
+    if (game.exhibitionSessionId !== sessionIdSnapshot || !game.exhibitionSessionActive) return;
+    if (game.question !== questionSnapshot || game.questionScreeningNonce !== nonce) return;
+    if (error?.code === "cancelled") return;
+    game.questionScreeningCode = error?.code || "screening-unavailable";
+    setQuestionFocus(true);
+    updateAccessibleStatus();
+  } finally {
+    if (game.exhibitionSessionId === sessionIdSnapshot
+        && game.question === questionSnapshot
+        && game.questionScreeningNonce === nonce) {
+      game.questionScreening = false;
+      updateAccessibleStatus();
+    }
+  }
 }
 
 function requestAiRecommendation(question) {
@@ -6104,6 +6199,9 @@ function startNewTarget() {
   startCoverJourneyMusic();
   game.question = "";
   game.questionFocused = true;
+  game.questionScreening = false;
+  game.questionScreeningCode = "";
+  game.questionScreeningNonce += 1;
   syncQuestionInputValue(true);
   resetTextScroll("livingQuestionInput", "questionInput");
   game.aiRecommendation = null;
@@ -6644,7 +6742,17 @@ function updateAccessibleStatus() {
       : "The catch was lost. Click to cast again."
   };
 
-  status.textContent = messages[game.state];
+  let message = messages[game.state];
+  if (["question", "livingQuestion"].includes(game.state)) {
+    if (game.questionScreening) {
+      message += " Checking whether this target is suitable for exhibition mode.";
+    } else if (["unsafe-content", "exhibition-out-of-scope"].includes(game.questionScreeningCode)) {
+      message += " This target is outside exhibition mode. Choose a different question.";
+    } else if (game.questionScreeningCode) {
+      message += " The exhibition safety check failed. Try again.";
+    }
+  }
+  status.textContent = message;
 }
 
 function addRipple(x, y, colour, size) {

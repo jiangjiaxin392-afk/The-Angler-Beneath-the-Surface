@@ -7,7 +7,8 @@
 })(typeof window !== "undefined" ? window : null, function createServerAiModule() {
   "use strict";
 
-  const CLIENT_REVISION = "20260808-answer-diversity-v6";
+  const CLIENT_REVISION = "20260808-exhibition-safety-v7";
+  const DEFAULT_SCREENING_TIMEOUT_MS = 12_000;
   const DEFAULT_RECOMMENDATION_TIMEOUT_MS = 30_000;
   const DEFAULT_GENERATION_TIMEOUT_MS = 30_000;
 
@@ -68,6 +69,16 @@
     );
   }
 
+  function validateScreening(data) {
+    return Boolean(
+      data
+      && typeof data === "object"
+      && typeof data.allowed === "boolean"
+      && typeof data.code === "string"
+      && data.code.trim()
+    );
+  }
+
   function validateGeneration(data) {
     return Boolean(
       data
@@ -93,6 +104,11 @@
       Number.isFinite(options.recommendationTimeoutMs)
         ? Math.max(1, options.recommendationTimeoutMs)
         : DEFAULT_RECOMMENDATION_TIMEOUT_MS
+    );
+    const screeningTimeoutMs = sharedTimeoutMs || (
+      Number.isFinite(options.screeningTimeoutMs)
+        ? Math.max(1, options.screeningTimeoutMs)
+        : DEFAULT_SCREENING_TIMEOUT_MS
     );
     const generationTimeoutMs = sharedTimeoutMs || (
       Number.isFinite(options.generationTimeoutMs)
@@ -161,6 +177,9 @@
     return Object.freeze({
       mode: "server",
       revision: CLIENT_REVISION,
+      screenQuestion(payload) {
+        return postJson("/api/ai/screen", payload, validateScreening, screeningTimeoutMs);
+      },
       recommend(payload) {
         return postJson("/api/ai/recommend", payload, validateRecommendation, recommendationTimeoutMs);
       },

@@ -28,6 +28,16 @@ test("recommendation accepts a valid server response", async () => {
   assert.equal(result.waterId, "daylight-river");
 });
 
+test("question screening preserves an exhibition block as a normal decision", async () => {
+  const runtime = createRuntime(async () => response(200, {
+    allowed: false,
+    code: "exhibition-out-of-scope"
+  }));
+  const result = await createAiClient(runtime, { timeoutMs: 50 }).screenQuestion({ question: "test" });
+  assert.equal(result.allowed, false);
+  assert.equal(result.code, "exhibition-out-of-scope");
+});
+
 test("generation rejects an empty successful response", async () => {
   const runtime = createRuntime(async () => response(200, { answer: "" }));
   await assert.rejects(

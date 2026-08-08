@@ -69,7 +69,9 @@ test("status exposes the running server revision", async () => {
   assert.equal(response.status, 200);
   const status = await response.json();
   assert.equal(status.provider, "openai");
-  assert.equal(status.serverRevision, "20260808-catch-shape-v17");
+  assert.equal(status.serverRevision, "20260808-exhibition-safety-v19");
+  assert.equal(status.safetyRevision, "20260808-exhibition-safety-v1");
+  assert.equal(status.moderationModel, "omni-moderation-latest");
   assert.equal(status.reasoningEffort, "low");
   assert.equal(typeof status.configured, "boolean");
 });
@@ -103,6 +105,31 @@ test("static files reject mutation methods", async () => {
 test("encoded traversal cannot expose project files", async () => {
   const response = await fetch(`${baseUrl}/public/%2e%2e/app.js`);
   assert.equal(response.status, 404);
+});
+
+test("the exact presentation example passes screening without an OpenAI connection", async () => {
+  const response = await fetch(`${baseUrl}/api/ai/screen`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ question: presentationReserve.QUESTION })
+  });
+  assert.equal(response.status, 200);
+  const result = await response.json();
+  assert.equal(result.allowed, true);
+  assert.equal(result.code, "allowed");
+});
+
+test("locally blocked exhibition questions never require an OpenAI connection", async () => {
+  const response = await fetch(`${baseUrl}/api/ai/screen`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ question: "Who should I support in the next election?" })
+  });
+  assert.equal(response.status, 200);
+  const result = await response.json();
+  assert.equal(result.allowed, false);
+  assert.equal(result.code, "exhibition-out-of-scope");
+  assert.equal(Object.hasOwn(result, "category"), false);
 });
 
 test("a provider outage returns no fabricated catch answer", async () => {

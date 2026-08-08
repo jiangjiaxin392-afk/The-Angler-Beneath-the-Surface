@@ -179,6 +179,8 @@ flowchart LR
 - structured answer generation with bounded retries when output is empty or invalid;
 - semantic-core tracking that distinguishes fixed, limited and open answer spaces and rejects shallow paraphrases of recent catches;
 - privacy-safe error responses and security headers;
+- server-side exhibition screening before target lock, combining narrow local rules, OpenAI moderation and a contextual exhibition-scope classifier;
+- generated-answer moderation before any live response is allowed to surface;
 - exact presentation reserve checked before any OpenAI request.
 
 ### OpenAI behaviour
@@ -196,6 +198,9 @@ The project is designed to fail visibly rather than silently fabricate success.
 - Each target retains at most ten compact core-and-angle records rather than retransmitting complete answers. New Target and Home clear this history; changing water or tackle preserves it.
 - Reserve responses use the same core history as live OpenAI answers. Repeated request IDs are idempotent, so a retry cannot change the answer for the same cast.
 - Any edited or different question still requires the live OpenAI route.
+- Questions containing clearly abusive material or out-of-scope current political topics remain on the question screen and never enter the fishing sequence.
+- Screening decisions are cached by a one-way question hash for 30 minutes; raw blocked questions are not written to diagnostic logs.
+- A moderation outage fails closed with `SIGNAL CHECK FAILED` rather than allowing an unchecked target or answer onto the exhibition screen.
 - Unknown or invalid game states recover to a safe state instead of leaving a blank screen.
 - Home, New Target, Change Tackle, Change Location, cutscene skip and landing completion have explicit transition tests.
 - Five minutes without interaction returns the installation to the cover and clears the session for the next visitor.
@@ -204,9 +209,10 @@ The reserve is an exhibition continuity mechanism, not a general offline AI syst
 
 ## Testing and Preflight
 
-The current suite contains **74 automated tests** covering:
+The current suite contains **86 automated tests** covering:
 
 - AI request validation, cancellation, timeouts, retries and privacy-safe failure codes;
+- exhibition screening, text normalisation, simple bypass attempts, scope exceptions and hashed decision-cache expiry;
 - audio playback, volume clamping, sequencing and safe recovery;
 - catch-answer shaping;
 - weather probability totals and weighted selection boundaries;
