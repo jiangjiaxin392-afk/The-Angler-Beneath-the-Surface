@@ -1,8 +1,10 @@
 "use strict";
 
+const answerMethods = require("./answer-methods.js");
+
 const QUESTION = "What attractions should I visit in London?";
 const SOURCE = "presentation-reserve";
-const REVISION = "20260808-presentation-diversity-v3";
+const REVISION = "20260809-presentation-methods-v7";
 const REQUEST_CACHE_LIMIT = 256;
 
 function core(id, label, summary, direct, route, compare, currentCheck, tangent) {
@@ -115,34 +117,24 @@ function historyFromContext(context) {
   return Array.isArray(context?.history) ? context.history.slice(0, 10) : [];
 }
 
-function selectedTackleRule(context, selectedCore) {
-  const type = String(context?.promptConfiguration?.type?.name || "DIRECT").toUpperCase();
-  if (type === "COMPARATIVE") return selectedCore.compare;
-  if (type === "EVIDENCE-LED") return selectedCore.currentCheck;
-  if (type === "CONTEXT-RICH") return selectedCore.route;
-  if (type === "CRITICAL") return `Keep in mind ${selectedCore.tangent}.`;
-  return "";
-}
-
-function selectedWaterRule(context, selectedCore) {
-  const waterId = String(context?.waterId || "daylight-river");
-  if (waterId === "signal-canal") return selectedCore.currentCheck;
-  if (waterId === "sunken-reservoir") return selectedCore.compare;
-  return selectedCore.route;
-}
-
 function buildAnswer(selectedCore, angle, catchId, context) {
-  const method = selectedTackleRule(context, selectedCore) || selectedWaterRule(context, selectedCore);
+  const method = answerMethods.compileAnswerMethod({
+    waterId: context?.waterId,
+    promptConfiguration: context?.promptConfiguration,
+    catchId
+  });
+  const methodSegments = method.reserveSegments(selectedCore);
+  const methodText = `${methodSegments.water} ${methodSegments.tackle}`;
   const focus = angle.summary;
   const additionalFocus = angle.id === "character" ? "" : focus;
   const answers = {
-    bass: [`${selectedCore.label} is a strong London choice.`, selectedCore.direct, additionalFocus, method].filter(Boolean).join(" "),
-    trout: `Visit ${selectedCore.label}. ${selectedCore.direct} ${method}`,
-    pike: `Prioritise ${selectedCore.label}. ${selectedCore.direct} ${method}`,
+    bass: [`${selectedCore.label} is a strong London choice.`, additionalFocus, methodText].filter(Boolean).join(" "),
+    trout: methodText,
+    pike: `PRIORITY: ${selectedCore.label}. ${methodText}`,
     perch: `${selectedCore.label}.`,
-    carp: `${selectedCore.label} can involve several overlapping possibilities: ${selectedCore.direct} ${selectedCore.route} ${selectedCore.compare} ${selectedCore.currentCheck} You could also reorganise the visit around architecture, history, food, landscape, transport, cost, weather and the interests of different visitors, although that volume of considerations does not make the priority especially clear.`,
+    carp: `${methodText} ${selectedCore.label} can also involve several overlapping possibilities: ${selectedCore.direct} ${selectedCore.route} ${selectedCore.compare} ${selectedCore.currentCheck} You could reorganise the visit around architecture, history, food, landscape, transport, cost, weather and the interests of different visitors, although that volume of considerations does not make the priority especially clear.`,
     weeds: `${selectedCore.label} is one possible starting point. But that quickly leads into a different discussion about ${selectedCore.tangent}. The original question about which London attraction to visit remains unresolved.`,
-    rubbish: `${selectedCore.label} first. Wait—start with the route. ${focus} No, back up: ${selectedCore.label}, then the comparison, then the same place again. ${method} Start there—already said that—leave, return, switch the order. No clean conclusion.`,
+    rubbish: `${selectedCore.label} first. Wait—start with the route. ${focus} No, back up: ${selectedCore.label}, then the comparison, then the same place again. Start there—already said that—leave, return, switch the order. No clean conclusion.`,
     boot: `An undated visitor guide recommends ${selectedCore.label}. ${selectedCore.direct} ${selectedCore.route} The suggestion remains plausible, but ${selectedCore.currentCheck.toLowerCase()}`
   };
   return answers[catchId] || answers.trout;

@@ -52,15 +52,50 @@ test("the same request ID always returns the same answer without advancing the l
   assert.deepEqual(repeated, first);
 });
 
-test("water and tackle routes still influence a protected example answer", () => {
-  const direct = deterministicSelector()(reserve.QUESTION, "trout", "direct", {
-    waterId: "daylight-river",
-    promptConfiguration: { type: { name: "DIRECT" } }
+test("all three waters create visibly different protected-example routes", () => {
+  const select = deterministicSelector();
+  const entries = [
+    ["daylight-river", "DIRECT ANSWER:"],
+    ["signal-canal", "SYNTHESIS:"],
+    ["sunken-reservoir", "OPTIONS:"]
+  ].map(([waterId, marker]) => {
+    const entry = select(reserve.QUESTION, "trout", `water-${waterId}`, {
+      waterId,
+      promptConfiguration: { tackleId: "quick" }
+    });
+    assert.match(entry.answer, new RegExp(marker));
+    return entry;
   });
-  const searched = deterministicSelector()(reserve.QUESTION, "trout", "searched", {
+  assert.equal(new Set(entries.map((entry) => entry.answerCoreId)).size, 1);
+  assert.equal(new Set(entries.map((entry) => entry.answer)).size, 3);
+});
+
+test("all nine tackles create visibly different protected-example methods", () => {
+  const select = deterministicSelector();
+  const tackleIds = [
+    "quick", "personal", "checked", "compare", "local",
+    "careful", "sample", "challenge", "evidence"
+  ];
+  const entries = tackleIds.map((tackleId) => select(
+    reserve.QUESTION,
+    "trout",
+    `tackle-${tackleId}`,
+    {
+      waterId: "daylight-river",
+      promptConfiguration: { tackleId }
+    }
+  ));
+  assert.equal(new Set(entries.map((entry) => entry.answerCoreId)).size, 1);
+  assert.equal(new Set(entries.map((entry) => entry.answer)).size, tackleIds.length);
+});
+
+test("water and tackle are composed instead of one replacing the other", () => {
+  const entry = deterministicSelector()(reserve.QUESTION, "trout", "combined", {
     waterId: "signal-canal",
-    promptConfiguration: { type: { name: "EVIDENCE-LED" } }
+    promptConfiguration: { tackleId: "evidence" }
   });
-  assert.equal(direct.answerCoreId, searched.answerCoreId);
-  assert.notEqual(direct.answer, searched.answer);
+  assert.match(entry.answer, /SYNTHESIS:/);
+  assert.match(entry.answer, /CURRENT CHECK:/);
+  assert.match(entry.answer, /SUPPORTED:/);
+  assert.match(entry.answer, /VERIFY:/);
 });

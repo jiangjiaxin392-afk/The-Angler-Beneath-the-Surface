@@ -69,7 +69,7 @@ test("status exposes the running server revision", async () => {
   assert.equal(response.status, 200);
   const status = await response.json();
   assert.equal(status.provider, "openai");
-  assert.equal(status.serverRevision, "20260808-exhibition-safety-v19");
+  assert.equal(status.serverRevision, "20260809-answer-methods-v23");
   assert.equal(status.safetyRevision, "20260808-exhibition-safety-v1");
   assert.equal(status.moderationModel, "omni-moderation-latest");
   assert.equal(status.reasoningEffort, "low");
